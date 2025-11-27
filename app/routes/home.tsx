@@ -7,12 +7,10 @@ import { VALUE_FROM_EXPRESS } from "server/app";
 import { getUser } from "~/utils/global-context";
 import { SuggestionImages } from "~/components/suggestion-images";
 import { Sidebar } from "~/components/sidebar";
+import { Outlet } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
+  return [{ title: "fashion" }];
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -56,12 +54,18 @@ export async function loader({ context }: Route.LoaderArgs) {
   };
 }
 
-export default function Home({ actionData, loaderData }: Route.ComponentProps) {
+export default function Home({
+  matches,
+  actionData,
+  loaderData,
+}: Route.ComponentProps) {
   return (
     <div className="flex flex-col items-center justify-center w-full h-full">
-      <div className="flex flex-row gap-3">
-        <Sidebar />
-        <SuggestionImages />
+      <div className="flex flex-row gap-3 h-full w-full justify-center">
+        <Sidebar matches={matches} />
+        <div className="flex-1 w-[50vw] relative flex flex-col items-center justify-start max-w-[800px]">
+          <Outlet />
+        </div>
       </div>
       <div className="absolute top-0 right-0 w-full flex flex-row items-center justify-end p-4">
         <div className="w-10 h-10 bg-zinc-300 rounded-full"></div>

@@ -3,25 +3,25 @@ export type SuggestionImagesProps = {
   columns?: number;
 };
 export function SuggestionImages({
-  rows = 2,
-  columns = 2,
+  rows = 1,
+  columns = 3,
 }: SuggestionImagesProps) {
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full gap-5">
+    <div className="flex flex-col items-stretch justify-center gap-5 mt-36">
       {Array.from({ length: rows }).map((_, row) => (
         <div
           key={row}
-          className="flex flex-row items-center justify-center w-full gap-5"
+          className="flex flex-row items-center justify-center gap-5"
         >
           {Array.from({ length: columns }).map((_, column) => (
             <div
               key={column}
-              className="flex flex-col items-center justify-center gap-1"
+              className="flex-1 flex flex-col items-center justify-center gap-1"
             >
               <img
-                src={`https://picsum.photos/200/300?random=${row}-${column}`}
+                src={`https://picsum.photos/300/500?random=${row}-${column}`}
                 alt="Suggestion Image"
-                className="w-[40vh] h-[40vh] object-cover"
+                className={`object-cover w-full`}
               />
               <div className="w-full h-2 flex flex-row items-center justify-end">
                 <div className="w-8 h-full bg-cyan-500" />
@@ -33,6 +33,17 @@ export function SuggestionImages({
           ))}
         </div>
       ))}
+      <div className="flex flex-row justify-between items-center w-full px-3">
+        <div>{"< >"}</div>
+        <div className="flex flex-col items-end">
+          <p className="font-bold font-serif text-lg">
+            Outfits for Wednesday, Nov. 26
+          </p>
+          <p className="text-zinc-500 font-medium font-serif">
+            Refreshes in 12 hours
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

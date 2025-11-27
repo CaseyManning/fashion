@@ -1,6 +1,13 @@
 import { Link } from "react-router";
+import type { Route } from "../routes/+types/home";
 
-export function Sidebar() {
+export function Sidebar({
+  matches,
+}: {
+  matches: Route.ComponentProps["matches"];
+}) {
+  const currentPath = matches[matches.length - 1]?.pathname;
+
   const links = [
     {
       label: "Inspo",
@@ -12,16 +19,22 @@ export function Sidebar() {
     },
     {
       label: "Settings",
-      href: "/closet",
+      href: "/settings",
     },
   ];
+  const plainPath = currentPath?.replaceAll("/", "");
+
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col items-center gap-3 w-36 mt-36">
       {links.map((link, index) => (
         <Link
           key={link.href}
           to={link.href}
-          className={`p-2 px-5 w-full font-medium text-sm ${index === 0 ? "bg-[#EEFF42]" : "bg-zinc-100"}`}
+          className={`p-3 px-5 w-full text-sm transition-none ${
+            plainPath === link.href.replaceAll("/", "")
+              ? "bg-[#EEFF42] font-bold!"
+              : "bg-zinc-100"
+          }`}
         >
           {link.label}
         </Link>

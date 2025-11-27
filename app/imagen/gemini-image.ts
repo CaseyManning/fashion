@@ -1,5 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 
+export enum Model {
+  Flash_2_5 = "gemini-2.5-flash-image",
+}
+
 export async function generateImage(prompt: string) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -8,10 +12,8 @@ export async function generateImage(prompt: string) {
 
   const ai = new GoogleGenAI({ apiKey });
 
-  // This is the official JS pattern from the image-generation docs
-  // model name = Nano Banana (Gemini 2.5 Flash Image)
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-image",
+    model: Model.Flash_2_5,
     contents: prompt,
   });
 
