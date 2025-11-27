@@ -5,10 +5,13 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  type MiddlewareFunction,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { authSessionMiddleware } from "./auth/auth.server";
+import { globalStorageMiddleware } from "./utils/global-context";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -46,7 +49,7 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
+  let message = "Error:";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;
 
@@ -73,3 +76,8 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     </main>
   );
 }
+
+export const middleware: Route.MiddlewareFunction[] = [
+  authSessionMiddleware,
+  globalStorageMiddleware,
+];
