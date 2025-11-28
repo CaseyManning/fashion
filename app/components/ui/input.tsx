@@ -14,7 +14,7 @@ export function Input({
     <input
       type={type}
       data-slot="input"
-      className={`flex h-9 rounded-md bg-zinc-100 px-3 py-1 
+      className={`flex rounded-md bg-zinc-100 px-3 py-3
         text-base  outline-none transition-[color,box-shadow]
          file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground 
          disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm 

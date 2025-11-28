@@ -2,7 +2,7 @@ import { registerUser } from "~/auth/user.server";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, href, Link, redirect } from "react-router";
 import { getValidatedFormData, useRemixForm } from "remix-hook-form";
-import { Button } from "../components/ui/button";
+import Button from "../components/ui/button";
 import { Input, InputError, InputField } from "../components/ui/input";
 import { registerFormSchema } from "~/auth/register.schema";
 import type { Route } from "./+types/register";
@@ -71,7 +71,9 @@ export default function RegisterRoute() {
           <Link to="/login" className="text-sm text-zinc-500 hover:underline">
             Log in
           </Link>
-          <Button type="submit">Register</Button>
+          <Button type="submit" color="black">
+            Register
+          </Button>
         </div>
       </div>
     </Form>

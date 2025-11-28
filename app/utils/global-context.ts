@@ -2,11 +2,10 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { getAuthSessionFromContext } from "~/auth/auth.server";
 import { getUserByEmail } from "~/auth/user.server";
 import type { Session, MiddlewareFunction } from "react-router";
+import type { InferSelectModel } from "drizzle-orm";
+import * as schema from "~/database/schema";
 
-type User = {
-  email: string;
-  id: number;
-};
+type User = Pick<InferSelectModel<typeof schema.users>, "email" | "id">;
 
 type GlobalStorage = {
   authSession: Session;

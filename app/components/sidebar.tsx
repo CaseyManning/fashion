@@ -32,7 +32,7 @@ export function Sidebar({
           to={link.href}
           className={`p-3 px-5 w-full text-sm transition-none ${
             plainPath === link.href.replaceAll("/", "")
-              ? "bg-[#EEFF42] font-bold!"
+              ? "bg-zinc-950 text-white"
               : "bg-zinc-100"
           }`}
         >

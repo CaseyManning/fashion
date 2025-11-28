@@ -13,6 +13,7 @@
   "dependencies": {
     "@google/genai": "^1.30.0",
     "@hookform/resolvers": "^5.2.2",
+    "@imgly/background-removal-node": "^1.4.5",
     "@react-router/express": "^7.7.1",
     "@react-router/node": "^7.7.1",
     "compression": "^1.8.0",
@@ -26,6 +27,7 @@
     "react-router": "^7.7.1",
     "remix-hook-form": "^7.1.1",
     "remix-utils": "^9.0.0",
+    "sharp": "^0.34.5",
     "zod": "^4.1.13"
   },
   "devDependencies": {

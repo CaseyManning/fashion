@@ -3,7 +3,7 @@ import { loginUser } from "~/auth/user.server";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, href, Link, redirect } from "react-router";
 import { getValidatedFormData, useRemixForm } from "remix-hook-form";
-import { Button } from "~/components/ui/button";
+import Button from "~/components/ui/button";
 import { Input, InputError, InputField } from "~/components/ui/input";
 import type { Route } from "./+types/login";
 
@@ -64,7 +64,9 @@ export default function LoginRoute() {
           >
             Forgot password?
           </Link>
-          <Button type="submit">Login</Button>
+          <Button type="submit" color="black">
+            Login
+          </Button>
         </div>
       </div>
     </Form>

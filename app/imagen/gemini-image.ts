@@ -39,3 +39,56 @@ export async function generateImage(prompt: string) {
     }
   }
 }
+
+export async function transformImage(
+  imageBuffer: Buffer,
+  prompt: string,
+  mimeType = "image/png"
+) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Set GEMINI_API_KEY in your environment.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const response = await ai.models.generateContent({
+    model: Model.Flash_2_5,
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            inlineData: {
+              mimeType,
+              data: imageBuffer.toString("base64"),
+            },
+          },
+          {
+            text: prompt,
+          },
+        ],
+      },
+    ],
+  });
+
+  const candidate = response.candidates?.[0];
+  if (!candidate?.content?.parts) {
+    console.error("No candidates returned:", response);
+    return;
+  }
+
+  for (const part of candidate.content.parts) {
+    if (part.text) {
+      console.log("Text part:", part.text);
+      continue;
+    }
+    if (part.inlineData?.data) {
+      const base64 = part.inlineData.data;
+      return Buffer.from(base64, "base64");
+    }
+  }
+}
+
+// Preserve the earlier typo just in case anything imports it.
+export const transofrmImage = transformImage;
