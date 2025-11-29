@@ -85,7 +85,7 @@ const Button: React.FC<ButtonProps> = ({
       value={value}
       name="_action"
       type={type}
-      className={`${sizeClass} font-medium rounded w-fit h-fit flex items-center justify-center ${
+      className={`${sizeClass} cursor-pointer font-medium rounded w-fit h-fit flex items-center justify-center ${
         disabled ? "opacity-50 cursor-not-allowed!" : ``
       } ${colorClasses[color]} ${className} `}
       style={{

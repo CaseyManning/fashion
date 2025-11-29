@@ -1,7 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
+import type z from "zod/v3";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 export enum Model {
-  Flash_2_5 = "gemini-2.5-flash-image",
+  Flash_2_5_Image = "gemini-2.5-flash-image",
+  Flash_2_5 = "gemini-2.5-flash",
 }
 
 export async function generateImage(prompt: string) {
@@ -13,7 +16,7 @@ export async function generateImage(prompt: string) {
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
-    model: Model.Flash_2_5,
+    model: Model.Flash_2_5_Image,
     contents: prompt,
   });
 
@@ -53,7 +56,7 @@ export async function transformImage(
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
-    model: Model.Flash_2_5,
+    model: Model.Flash_2_5_Image,
     contents: [
       {
         role: "user",
@@ -88,6 +91,50 @@ export async function transformImage(
       return Buffer.from(base64, "base64");
     }
   }
+}
+
+export async function structuredResponseFromImage<T>(
+  imageBuffer: Buffer,
+  prompt: string,
+  schema: z.ZodSchema<T>,
+  mimeType = "image/png"
+): Promise<T> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Set GEMINI_API_KEY in your environment.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const response = await ai.models.generateContent({
+    model: Model.Flash_2_5,
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            inlineData: {
+              mimeType,
+              data: imageBuffer.toString("base64"),
+            },
+          },
+          {
+            text: prompt,
+          },
+        ],
+      },
+    ],
+    config: {
+      responseMimeType: "application/json",
+      responseJsonSchema: zodToJsonSchema(schema),
+    },
+  });
+  if (!response.text) {
+    throw new Error("No text returned from Gemini");
+  }
+
+  const match = schema.parse(JSON.parse(response.text));
+  return match;
 }
 
 // Preserve the earlier typo just in case anything imports it.

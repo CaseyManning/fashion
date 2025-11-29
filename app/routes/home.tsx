@@ -63,12 +63,9 @@ export default function Home({
     <div className="flex flex-col items-center justify-center w-full h-full">
       <div className="flex flex-row gap-3 h-full w-full justify-center">
         <Sidebar matches={matches} />
-        <div className="flex-1 w-[50vw] relative flex flex-col items-center justify-start max-w-[800px]">
+        <div className="flex-1 w-[50vw] flex flex-col items-center justify-start max-w-[800px]">
           <Outlet />
         </div>
-      </div>
-      <div className="absolute top-0 right-0 w-full flex flex-row items-center justify-end p-4">
-        <div className="w-10 h-10 bg-zinc-300 rounded-full"></div>
       </div>
     </div>
   );

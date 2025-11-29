@@ -1,5 +1,5 @@
 import { createRequestHandler } from "@react-router/express";
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import express from "express";
 import postgres from "postgres";
 import "react-router";
@@ -14,9 +14,37 @@ export const app = express();
 
 if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 
-const client = postgres(process.env.DATABASE_URL);
-const db = drizzle(client, { schema });
-app.use((_, __, next) => DatabaseContext.run(db, next));
+declare global {
+  // eslint-disable-next-line no-var
+  var __postgresClient__: ReturnType<typeof postgres> | undefined;
+
+  // eslint-disable-next-line no-var
+  var __drizzleDb__: PostgresJsDatabase<typeof schema> | undefined;
+}
+
+// Create/reuse client
+let client: ReturnType<typeof postgres>;
+let db: PostgresJsDatabase<typeof schema>;
+
+if (process.env.NODE_ENV === "production") {
+  client = postgres(process.env.DATABASE_URL);
+  db = drizzle(client, { schema });
+} else {
+  if (!global.__postgresClient__) {
+    global.__postgresClient__ = postgres(process.env.DATABASE_URL);
+  }
+  client = global.__postgresClient__;
+
+  if (!global.__drizzleDb__) {
+    global.__drizzleDb__ = drizzle(client, { schema });
+  }
+  db = global.__drizzleDb__;
+}
+
+// Attach db to AsyncLocalStorage per request
+app.use((req, res, next) => {
+  DatabaseContext.run(db, () => next());
+});
 
 app.use(
   createRequestHandler({

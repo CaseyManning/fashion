@@ -53,10 +53,11 @@ export const clothing = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     brand: varchar("brand", { length: 255 }),
-    originalUploadImg: varchar("original_upload_img", { length: 255 }),
     previewImg: varchar("preview_img", { length: 255 }),
+    processing: boolean("processing").default(true),
     category: clothingCategory("category").notNull().default("other"),
     name: varchar("name", { length: 255 }),
+    dimensions: text("dimensions"),
     notes: text("notes"),
     description: text("description"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -66,15 +67,43 @@ export const clothing = pgTable(
     favorite: boolean("favorite").default(false),
     rating: integer("rating").default(0),
   },
-  (table) => [check("rating_check", sql`rating >= 0 AND rating <= 5`)]
+  () => [check("rating_check", sql`rating >= 0 AND rating <= 5`)]
 );
 
-export const clothingRelations = relations(clothing, ({ one }) => ({
+export const uploadedClothingPhotos = pgTable("uploaded_clothing_photos", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  key: varchar("key", { length: 255 }),
+  clothingId: uuid("clothing_id")
+    .notNull()
+    .references(() => clothing.id, { onDelete: "cascade" }),
+});
+
+export const clothingRelations = relations(clothing, ({ one, many }) => ({
   user: one(users, {
     fields: [clothing.userId],
     references: [users.id],
   }),
+  uploadedPhotos: many(uploadedClothingPhotos),
 }));
+
+export const uploadedClothingPhotosRelations = relations(
+  uploadedClothingPhotos,
+  ({ one }) => ({
+    author: one(users, {
+      fields: [uploadedClothingPhotos.userId],
+      references: [users.id],
+    }),
+    clothing: one(clothing, {
+      fields: [uploadedClothingPhotos.clothingId],
+      references: [clothing.id],
+    }),
+  })
+);
 
 export const outfitGenerations = pgTable("outfit_generations", {
   id: uuid().primaryKey().defaultRandom(),

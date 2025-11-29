@@ -10,7 +10,6 @@ export default [
     route("/", "routes/home.tsx", [
       index("routes/inspo.tsx"),
       route("closet", "routes/closet/closet.tsx", [
-        index("routes/closet/list.tsx"),
         route(":id", "routes/closet/item.tsx"),
       ]),
       route("settings", "routes/settings.tsx"),

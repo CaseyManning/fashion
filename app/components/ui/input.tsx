@@ -2,22 +2,31 @@ export function InputField({ children }: React.PropsWithChildren) {
   return <div className="flex w-full flex-col gap-1">{children}</div>;
 }
 
+export type inputStyle = "default" | "outline";
+
 export function Input({
+  inputStyle = "default",
   className,
   type,
   error,
   ...props
 }: React.ComponentProps<"input"> & {
   error?: boolean;
+  inputStyle?: inputStyle;
 }) {
+  const styleClassNames =
+    inputStyle === "default"
+      ? `flex rounded-md bg-zinc-100 px-3 py-3
+        text-base  outline-none transition-[color,box-shadow]
+         file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground 
+         disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm`
+      : "border border-zinc-500 p-3 focus:ring-0 focus:outline-none";
+
   return (
     <input
       type={type}
       data-slot="input"
-      className={`flex rounded-md bg-zinc-100 px-3 py-3
-        text-base  outline-none transition-[color,box-shadow]
-         file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground 
-         disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm 
+      className={`${styleClassNames}
         ${error && "border-destructive aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"}
         ${className}`}
       {...props}

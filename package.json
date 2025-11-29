@@ -20,6 +20,7 @@
     "drizzle-orm": "~0.36.3",
     "express": "^5.1.0",
     "isbot": "^5.1.27",
+    "lucide-react": "^0.555.0",
     "morgan": "^1.10.0",
     "postgres": "^3.4.5",
     "react": "^19.1.0",
@@ -28,7 +29,8 @@
     "remix-hook-form": "^7.1.1",
     "remix-utils": "^9.0.0",
     "sharp": "^0.34.5",
-    "zod": "^4.1.13"
+    "zod": "^4.1.13",
+    "zod-to-json-schema": "^3.25.0"
   },
   "devDependencies": {
     "@react-router/dev": "^7.7.1",

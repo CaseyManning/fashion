@@ -10,7 +10,7 @@ export function Sidebar({
 
   const links = [
     {
-      label: "Inspo",
+      label: "Outfits",
       href: "/",
     },
     {

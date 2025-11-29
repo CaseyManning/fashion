@@ -1,0 +1,1 @@
+ALTER TABLE "clothing" ADD COLUMN "processing" boolean DEFAULT true;
