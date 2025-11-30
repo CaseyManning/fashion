@@ -1,6 +1,5 @@
 import fs from "fs/promises";
 import path from "path";
-import { randomUUID } from "crypto";
 import {
   Form,
   useActionData,
@@ -15,6 +14,7 @@ import { and, eq, inArray, type InferSelectModel } from "drizzle-orm";
 import Button from "~/components/ui/button";
 import { transformImage } from "~/imagen/gemini-image";
 import { useEffect, useMemo, useState } from "react";
+import { processAndSave } from "~/clothing/clothing.server";
 
 type Clothing = InferSelectModel<typeof schema.clothing>;
 
@@ -32,6 +32,10 @@ export async function loader() {
 
   const clothing = await db.query.clothing.findMany({
     where: eq(schema.clothing.userId, user.id),
+  });
+
+  const bodyPhotos = await db.query.bodyPhotos.findMany({
+    where: eq(schema.bodyPhotos.userId, user.id),
   });
 
   const outfitsRaw = await db.query.outfitGenerations.findMany({
@@ -52,7 +56,7 @@ export async function loader() {
     });
   }
 
-  return { clothing, outfits };
+  return { clothing, outfits, bodyPhotos };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -88,6 +92,16 @@ export async function action({ request }: Route.ActionArgs) {
     return { error: "All selected items need completed preview images." };
   }
 
+  const bodyPhotos = await db.query.bodyPhotos.findMany({
+    where: eq(schema.bodyPhotos.userId, user.id),
+  });
+
+  if (bodyPhotos.length === 0) {
+    return {
+      error: "Add at least one body photo so we can place the outfit on you.",
+    };
+  }
+
   const buffers: Buffer[] = [];
   for (const item of withPreviews) {
     if (!item.previewImg) continue;
@@ -105,25 +119,39 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
 
+  for (const photo of bodyPhotos) {
+    if (!photo.key) continue;
+    const photoPath = path.join(
+      process.cwd(),
+      "public",
+      photo.key.replace(/^\//, "")
+    );
+    try {
+      const buffer = await fs.readFile(photoPath);
+      buffers.push(buffer);
+    } catch (error) {
+      console.error("Unable to read body photo", photoPath, error);
+      return { error: "Could not read one of the body photos." };
+    }
+  }
+
   const prompt =
     typeof promptInput === "string" && promptInput.trim().length > 0
       ? promptInput.trim()
-      : `Compose a clean, editorial style outfit mockup that arranges these pieces together on a neutral background: ${withPreviews
-          .map((item) => item.name || item.category)
-          .join(", ")}. Keep proportions natural and flattering.`;
+      : ``;
 
-  const generated = await transformImage(buffers, prompt);
+  const generated = await transformImage(
+    buffers,
+    `${prompt}\nUse the person in the body reference photos as the model wearing the outfit. Keep skin tone, face, and body shape, consistent with the references while accurately rendering each selected clothing item.`
+  );
   if (!generated) {
     return { error: "Gemini did not return an outfit image. Try again." };
   }
 
-  const outfitDir = path.join(process.cwd(), "public", "uploads", "outfits");
-  await fs.mkdir(outfitDir, { recursive: true });
-  const fileName = `${Date.now()}-${randomUUID()}.png`;
-  const absolutePath = path.join(outfitDir, fileName);
-  await fs.writeFile(absolutePath, generated.toString());
-  const relativePath =
-    "/" + path.relative(path.join(process.cwd(), "public"), absolutePath);
+  const { relativePath } = await processAndSave(
+    generated.previewImgBuffer,
+    "outfits"
+  );
 
   const [outfit] = await db
     .insert(schema.outfitGenerations)
@@ -207,7 +235,7 @@ function ClothingCard({
 
 export default function OutfitGen() {
   const actionData = useActionData<typeof action>();
-  const { clothing, outfits } = useLoaderData<typeof loader>();
+  const { clothing, outfits, bodyPhotos } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const [selected, setSelected] = useState<string[]>([]);
@@ -231,16 +259,28 @@ export default function OutfitGen() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
+      <div className="space-y-2">
+        <p className="text-2xl font-semibold text-black">Outfit generator</p>
+        <p className="text-sm text-zinc-600">
+          Pick processed closet items and combine them with your saved body
+          photos so Gemini can render the look on you.
+        </p>
+      </div>
+
       <Form method="post" className="space-y-4">
         <div className="flex items-center justify-between text-sm text-zinc-700">
           <span>
             Select from {readyClothing.length} ready items
-            {selected.length ? ` (${selected.length} chosen)` : ""}
+            {selected.length ? ` (${selected.length} chosen)` : ""} · Using{" "}
+            {bodyPhotos.length} body photo
+            {bodyPhotos.length === 1 ? "" : "s"}
           </span>
           <Button
             type="submit"
             color="black"
-            disabled={isSubmitting || selected.length === 0}
+            disabled={
+              isSubmitting || selected.length === 0 || bodyPhotos.length === 0
+            }
           >
             {isSubmitting
               ? "Generating..."
@@ -249,6 +289,13 @@ export default function OutfitGen() {
                 : "Pick items to generate"}
           </Button>
         </div>
+
+        {bodyPhotos.length === 0 ? (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Add at least one body photo in your profile so the generator can
+            place outfits on you.
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
           {readyClothing.map((item) => (
@@ -275,7 +322,7 @@ export default function OutfitGen() {
           <textarea
             id="prompt"
             name="prompt"
-            defaultValue="Arrange these pieces into a cohesive look on a clean background. Keep proportions realistic and fashion-forward."
+            defaultValue="Arrange these pieces into a cohesive look on a clean background, worn naturally by the person in the body reference photos. Keep proportions realistic and fashion-forward."
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-0 focus:border-zinc-400"
             rows={3}
             disabled={isSubmitting}

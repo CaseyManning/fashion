@@ -54,11 +54,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   };
 }
 
-export default function Home({
-  matches,
-  actionData,
-  loaderData,
-}: Route.ComponentProps) {
+export default function Home({ matches }: Route.ComponentProps) {
   return (
     <div className="flex flex-row min-h-screen h-fitcontent flex-nowrap bg-pagebg bg-[#fcfcfc]">
       <Sidebar matches={matches} />

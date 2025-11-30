@@ -164,16 +164,6 @@ export const outfitGenerations = pgTable("outfit_generations", {
   image: varchar("image", { length: 255 }),
 });
 
-export const outfitGenerationsRelations = relations(
-  outfitGenerations,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [outfitGenerations.userId],
-      references: [users.id],
-    }),
-  })
-);
-
 export const outfitsToClothing = pgTable(
   "outfits_to_clothing",
   {
@@ -185,6 +175,17 @@ export const outfitsToClothing = pgTable(
       .references(() => clothing.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.outfitId, t.clothingId] })]
+);
+
+export const outfitGenerationsRelations = relations(
+  outfitGenerations,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [outfitGenerations.userId],
+      references: [users.id],
+    }),
+    outfitsToClothing: many(outfitsToClothing),
+  })
 );
 
 export const outfitsToClothingRelations = relations(

@@ -15,6 +15,7 @@ import { Input } from "~/components/ui/input";
 import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 import type { loader as closetLoader } from "./closet";
 import { addClothingPhoto } from "~/clothing/clothing.server";
+import { LightboxCard } from "~/components/ligthbox-card";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { id } = params;
@@ -79,7 +80,8 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
           ? clothesList[index - 1]
           : clothesList[clothesList.length - 1]
         ).id,
-      })
+      }),
+      { replace: true }
     );
   }, [clothing.id, clothesList]);
 
@@ -91,7 +93,8 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
           ? clothesList[index + 1]
           : clothesList[0]
         ).id,
-      })
+      }),
+      { replace: true }
     );
   }, [clothing.id, clothesList]);
 
@@ -107,9 +110,6 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
         return;
       }
 
-      if (e.key === "Escape") {
-        navigate("/closet");
-      }
       if (e.key === "ArrowRight") {
         navigateRight();
       }
@@ -146,179 +146,170 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
   }, [clothing.id]);
 
   return (
-    <div
-      className="flex flex-row absolute top-0 left-0 w-full h-full bg-zinc-100 z-10"
-      key={clothing.id}
-    >
-      <div className="flex flex-row gap-4 bg-white m-10 rounded-md p-4 w-full border border-zinc-200 shadow-xl/5">
-        <div className="flex-1 shrink-0 ml-5 relative flex flex-col">
-          <div className="min-h-0 flex-1">
-            {viewingUpload ? (
-              <div className="h-full flex items-center justify-center relative  p-5 lg:p-15 group">
-                <img
-                  src={viewingUpload}
-                  className="w-auto object-contain drop-shadow-2xl/20 h-full"
-                />
-                <div
-                  className="absolute top-0 right-5 p-5 bg-white cursor-pointer rounded-bl-md flex items-center justify-center group-hover:opacity-100 opacity-0 transition-opacity duration-50"
-                  onClick={() => setViewingUpload(null)}
-                >
-                  <X size={20} />
+    <LightboxCard key={clothing.id} closeOnEscape={true}>
+      <div className="flex-1 shrink-0 ml-5 relative flex flex-col">
+        <div className="min-h-0 flex-1">
+          {viewingUpload ? (
+            <div className="h-full flex items-center justify-center relative  p-5 lg:p-15 group">
+              <img
+                src={viewingUpload}
+                className="w-auto object-contain drop-shadow-2xl/20 h-full"
+              />
+              <div
+                className="absolute top-0 right-5 p-5 bg-white cursor-pointer rounded-bl-md flex items-center justify-center group-hover:opacity-100 opacity-0 transition-opacity duration-50"
+                onClick={() => setViewingUpload(null)}
+              >
+                <X size={20} />
+              </div>
+            </div>
+          ) : (
+            <img
+              src={clothing.previewImg ?? undefined}
+              className="w-auto object-contain drop-shadow-2xl/20 h-full p-5 lg:p-15 mx-auto"
+            />
+          )}
+        </div>
+        {clothing.previewGenerationData ? (
+          <p className="text-xs text-zinc-500 w-full text-center">
+            {clothing.previewGenerationData.model}
+          </p>
+        ) : null}
+        <div className="h-[100px] pb-5 flex flex-row items-center shrink-0 cursor-pointer gap-3">
+          {clothing.uploadedPhotos.map((photo) => (
+            <img
+              src={photo.key ?? undefined}
+              className="h-full"
+              key={photo.id}
+              onClick={() => setViewingUpload(clothing.uploadedPhotos[0].key)}
+            />
+          ))}
+          <div className="relative">
+            <Button
+              className="p-2! m-3"
+              color="transparent"
+              onClick={handleUpload}
+            >
+              <Plus size={18} />
+            </Button>
+            {uploading && (
+              <div className="absolute bottom-0 left-0 translate-x-10 -translate-y-10 bg-white shadow-lg/5 rounded-md">
+                <div className="p-2">
+                  <Form
+                    method="post"
+                    className="flex flex-col gap-2"
+                    encType="multipart/form-data"
+                  >
+                    <Input
+                      name="image"
+                      type="file"
+                      required
+                      className="p-3 border border-zinc-200 rounded-md"
+                    />
+                    <div className="flex flex-row gap-2">
+                      <Button
+                        type="button"
+                        onClick={() => setUploading(false)}
+                        color="light"
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" color="black" value="add">
+                        Add
+                      </Button>
+                    </div>
+                  </Form>
                 </div>
               </div>
-            ) : (
-              <img
-                src={clothing.previewImg ?? undefined}
-                className="w-auto object-contain drop-shadow-2xl/20 h-full p-5 lg:p-15 mx-auto"
-              />
             )}
           </div>
-          {clothing.previewGenerationData ? (
-            <p className="text-xs text-zinc-500 w-full text-center">
-              {clothing.previewGenerationData.model}
-            </p>
-          ) : null}
-          <div className="h-[100px] pb-5 flex flex-row items-center shrink-0 cursor-pointer gap-3">
-            {clothing.uploadedPhotos.map((photo) => (
-              <img
-                src={photo.key ?? undefined}
-                className="h-full"
-                key={photo.id}
-                onClick={() => setViewingUpload(clothing.uploadedPhotos[0].key)}
-              />
-            ))}
-            <div className="relative">
-              <Button
-                className="p-2! m-3"
-                color="transparent"
-                onClick={handleUpload}
-              >
-                <Plus size={18} />
-              </Button>
-              {uploading && (
-                <div className="absolute bottom-0 left-0 translate-x-10 -translate-y-10 bg-white shadow-lg/5 rounded-md">
-                  <div className="p-2">
-                    <Form
-                      method="post"
-                      className="flex flex-col gap-2"
-                      encType="multipart/form-data"
-                    >
-                      <Input
-                        name="image"
-                        type="file"
-                        required
-                        className="p-3 border border-zinc-200 rounded-md"
-                      />
-                      <div className="flex flex-row gap-2">
-                        <Button
-                          type="button"
-                          onClick={() => setUploading(false)}
-                          color="light"
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit" color="black" value="add">
-                          Add
-                        </Button>
-                      </div>
-                    </Form>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col items-start justify-center relative gap-4">
-          <div className="absolute top-0 right-0 flex flex-row gap-2">
-            <Button className="p-2!" color="transparent" onClick={navigateLeft}>
-              <ArrowLeft size={20} />
-            </Button>
-            <Button
-              className="p-2!"
-              color="transparent"
-              onClick={navigateRight}
-            >
-              <ArrowRight size={20} />
-            </Button>
-            <Button
-              className="p-2!"
-              color="transparent"
-              onClick={() => navigate("/closet")}
-            >
-              <X size={20} />
-            </Button>
-          </div>
-          <Form
-            method="post"
-            className="flex flex-col gap-4"
-            ref={formRef}
-            onChange={onChange}
-            key={clothing.id}
-          >
-            <div className="flex flex-row gap-4">
-              <Input
-                inputStyle="outline"
-                type="text"
-                placeholder="give it a name"
-                name="name"
-                defaultValue={clothing.name ?? ""}
-              />
-              <Input
-                inputStyle="outline"
-                type="text"
-                placeholder="brand?"
-                name="brand"
-                defaultValue={clothing.brand ?? ""}
-              />
-            </div>
-            <div className="flex flex-row gap-4">
-              <select
-                name="category"
-                defaultValue={clothing.category ?? ""}
-                className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none w-full"
-              >
-                {schema.clothingCategories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              <Input
-                inputStyle="outline"
-                type="text"
-                placeholder="favorability"
-                name="favorability"
-                defaultValue={clothing.rating ?? ""}
-              />
-            </div>
-            <textarea
-              className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
-              rows={2}
-              placeholder="dimensions / sizing?"
-              name="dimensions"
-              defaultValue={clothing.dimensions ?? ""}
-            />
-            <textarea
-              className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
-              rows={3}
-              placeholder="notes?"
-              name="notes"
-              defaultValue={clothing.notes ?? ""}
-            />
-          </Form>
-          <Form method="post" className="flex flex-col gap-4">
-            <Button
-              type="submit"
-              color="black"
-              className="rounded-none"
-              value="delete"
-            >
-              Delete
-            </Button>
-          </Form>
         </div>
       </div>
-    </div>
+      <div className="flex-1 flex flex-col items-start justify-center relative gap-4">
+        <div className="absolute top-0 right-0 flex flex-row gap-2">
+          <Button className="p-2!" color="transparent" onClick={navigateLeft}>
+            <ArrowLeft size={20} />
+          </Button>
+          <Button className="p-2!" color="transparent" onClick={navigateRight}>
+            <ArrowRight size={20} />
+          </Button>
+          <Button
+            className="p-2!"
+            color="transparent"
+            onClick={() => navigate("/closet")}
+          >
+            <X size={20} />
+          </Button>
+        </div>
+        <Form
+          method="post"
+          className="flex flex-col gap-4"
+          ref={formRef}
+          onChange={onChange}
+          key={clothing.id}
+        >
+          <div className="flex flex-row gap-4">
+            <Input
+              inputStyle="outline"
+              type="text"
+              placeholder="give it a name"
+              name="name"
+              defaultValue={clothing.name ?? ""}
+            />
+            <Input
+              inputStyle="outline"
+              type="text"
+              placeholder="brand?"
+              name="brand"
+              defaultValue={clothing.brand ?? ""}
+            />
+          </div>
+          <div className="flex flex-row gap-4">
+            <select
+              name="category"
+              defaultValue={clothing.category ?? ""}
+              className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none w-full"
+            >
+              {schema.clothingCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+            <Input
+              inputStyle="outline"
+              type="text"
+              placeholder="favorability"
+              name="favorability"
+              defaultValue={clothing.rating ?? ""}
+            />
+          </div>
+          <textarea
+            className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
+            rows={2}
+            placeholder="dimensions / sizing?"
+            name="dimensions"
+            defaultValue={clothing.dimensions ?? ""}
+          />
+          <textarea
+            className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
+            rows={3}
+            placeholder="notes?"
+            name="notes"
+            defaultValue={clothing.notes ?? ""}
+          />
+        </Form>
+        <Form method="post" className="flex flex-col gap-4">
+          <Button
+            type="submit"
+            color="black"
+            className="rounded-none"
+            value="delete"
+          >
+            Delete
+          </Button>
+        </Form>
+      </div>
+    </LightboxCard>
   );
 };
 

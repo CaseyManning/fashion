@@ -13,8 +13,11 @@ import z from "zod/v3";
 import { eq } from "drizzle-orm";
 import { cropToNonTransparent } from "./imageutils.server";
 
-export async function processAndSave(buffer: Buffer) {
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "closet");
+export async function processAndSave(
+  buffer: Buffer,
+  folder: string = "closet"
+) {
+  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
 
   const fileName = `${Date.now()}.png`;
   const filePath = path.join(uploadDir, fileName);
