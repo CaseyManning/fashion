@@ -60,12 +60,10 @@ export default function Home({
   loaderData,
 }: Route.ComponentProps) {
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full">
-      <div className="flex flex-row gap-3 h-full w-full justify-center">
-        <Sidebar matches={matches} />
-        <div className="flex-1 w-[50vw] flex flex-col items-center justify-start max-w-[800px]">
-          <Outlet />
-        </div>
+    <div className="flex flex-row min-h-screen h-fitcontent flex-nowrap bg-pagebg bg-[#fcfcfc]">
+      <Sidebar matches={matches} />
+      <div className="flex-1 relative">
+        <Outlet />
       </div>
     </div>
   );

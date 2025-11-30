@@ -6,5 +6,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Settings() {
-  return <div>Settings</div>;
+  return null;
 }

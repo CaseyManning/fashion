@@ -5,6 +5,7 @@ import { database } from "~/database/context";
 import { getUser } from "~/utils/global-context";
 import * as schema from "~/database/schema";
 import {
+  Model,
   structuredResponseFromImage,
   transformImage,
 } from "~/imagen/gemini-image";
@@ -67,16 +68,19 @@ async function processUploadedClothing(clothing: Clothing, img: Sharp) {
 
   const { removeBackground } = await import("@imgly/background-removal-node");
 
-  const previewImgBuffer = await transformImage(
-    await img.toBuffer(),
-    "Generate a clean, aesthetic-looking preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details and colors of the item as closely as possible. The item should be centerd in the frame, lit softly, and be the only object in the image. Do not include a background, use plain white behind the item. No horizontal whitespace - edges of item should be nearly flush with the edges of the image."
+  const { previewImgBuffer, generationData } = await transformImage(
+    [await img.toBuffer()],
+    "Generate a clean preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details and colors and shape of the item as closely as possible. The item should be the only object in the image. Do not include a background, use plain white behind the item. No horizontal whitespace - edges of item should be nearly flush with the edges of the image. The proportions of the output should exactly match the input.",
+    Model.Flash_2_5_Image
   );
   if (!previewImgBuffer) {
     throw new Error("Failed to generate preview image");
   }
   console.log("preview image generated");
 
-  const blob = new Blob([previewImgBuffer], { type: "image/png" });
+  const blob = new Blob([previewImgBuffer as unknown as ArrayBuffer], {
+    type: "image/png",
+  });
   const noBg = await removeBackground(blob);
   const cropped = await cropToNonTransparent(
     Buffer.from(await noBg.arrayBuffer())
@@ -94,8 +98,11 @@ async function processUploadedClothing(clothing: Clothing, img: Sharp) {
       previewImg: previewRelativePath,
       category,
       processing: false,
+      previewGenerationData: generationData,
     })
     .where(eq(schema.clothing.id, clothing.id));
+
+  console.log("processing finished");
 }
 
 export async function uploadClothing(image: File): Promise<Clothing> {
@@ -115,20 +122,15 @@ export async function uploadClothing(image: File): Promise<Clothing> {
     })
     .returning();
 
-  const uploadedPhoto = await db
-    .insert(schema.uploadedClothingPhotos)
-    .values({
-      userId: user.id,
-      key: relativePath,
-      clothingId: clothing.id,
-    })
-    .returning();
+  await db.insert(schema.uploadedClothingPhotos).values({
+    userId: user.id,
+    key: relativePath,
+    clothingId: clothing.id,
+  });
 
   processUploadedClothing(clothing, img).catch((error) => {
     console.error(error);
   });
-
-  console.log("processing finished");
 
   return clothing;
 }

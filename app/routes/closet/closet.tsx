@@ -32,10 +32,13 @@ export async function loader() {
   for (const item of items) {
     inCategories[item.category].push(item);
   }
+  for (const [category, items] of Object.entries(inCategories)) {
+    items.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
 
-  const asList = Object.values(inCategories).flat();
+  const clothesList = Object.values(inCategories).flat();
 
-  return { inCategories, asList };
+  return { inCategories, clothesList };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -76,7 +79,7 @@ export default function ClosetList({ actionData }: Route.ComponentProps) {
 
   return (
     <>
-      <div className="mt-36 w-full">
+      <div className="w-full p-5 max-w-[900px] mx-auto">
         <div className="flex flex-row items-center justify-start border-zinc-200 border bg-zinc-100 rounded-md w-fit mx-auto">
           {adding ? (
             <div className="p-2">
@@ -127,12 +130,13 @@ export default function ClosetList({ actionData }: Route.ComponentProps) {
                   key={item.id}
                   className="hover:border-zinc-900 border border-transparent relative w-[100px] h-[100px] p-2"
                 >
-                  <img
-                    key={item.id}
-                    src={item.previewImg ?? undefined}
-                    alt={item.name ?? "Closet Item"}
-                    className="object-contain rounded-md"
-                  />
+                  {item.previewImg && (
+                    <img
+                      key={item.id}
+                      src={item.previewImg ?? undefined}
+                      className="object-contain rounded-md w-full h-full"
+                    />
+                  )}
                   {item.processing ? (
                     <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-zinc-100/50 rounded-md">
                       <Loading />

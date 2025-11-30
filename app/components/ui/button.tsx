@@ -51,7 +51,7 @@ export const colorClasses: Record<ButtonColor, string> = {
   "blue-outline":
     "border border-[#318dde] text-[#318dde] hover:bg-[#318dde]/10",
   yellow: "bg-yellow-600",
-  transparent: "bg-transparent hover:bg-zinc-100 text-black",
+  transparent: "bg-transparent hover:bg-black/5 text-black px-2!",
   grey: "bg-zinc-200 !text-black",
   outline: "border border-gray-2 text-black",
   white: "border border-gray-2 text-black bg-white hover:bg-zinc-50",

@@ -65,28 +65,35 @@ export async function action({ request, params }: Route.ActionArgs) {
 const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
   const { clothing } = loaderData;
 
-  const closetData = useRouteLoaderData<typeof closetLoader>(
+  const { clothesList } = useRouteLoaderData<typeof closetLoader>(
     "routes/closet/closet"
-  );
-  if (!closetData) {
-    throw new Error("Closet data not found");
-  }
-  const { asList } = closetData;
-  const index = asList.findIndex((item) => item.id === clothing.id);
-  const nextItem = (index < asList.length - 1 ? asList[index + 1] : asList[0])
-    ?.id;
-  const prevItem = (index > 0 ? asList[index - 1] : asList[asList.length - 1])
-    ?.id;
+  )!;
 
   const navigate = useNavigate();
 
   const navigateLeft = useCallback(() => {
-    navigate(href("/closet/:id", { id: prevItem }));
-  }, [prevItem]);
+    const index = clothesList.findIndex((item) => item.id === clothing.id);
+    navigate(
+      href("/closet/:id", {
+        id: (index > 0
+          ? clothesList[index - 1]
+          : clothesList[clothesList.length - 1]
+        ).id,
+      })
+    );
+  }, [clothing.id, clothesList]);
 
   const navigateRight = useCallback(() => {
-    navigate(href("/closet/:id", { id: nextItem }));
-  }, [nextItem]);
+    const index = clothesList.findIndex((item) => item.id === clothing.id);
+    navigate(
+      href("/closet/:id", {
+        id: (index < clothesList.length - 1
+          ? clothesList[index + 1]
+          : clothesList[0]
+        ).id,
+      })
+    );
+  }, [clothing.id, clothesList]);
 
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
@@ -140,7 +147,7 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
 
   return (
     <div
-      className="flex flex-row absolute top-0 left-0 w-full h-full bg-black/5 z-10"
+      className="flex flex-row absolute top-0 left-0 w-full h-full bg-zinc-100 z-10"
       key={clothing.id}
     >
       <div className="flex flex-row gap-4 bg-white m-10 rounded-md p-4 w-full border border-zinc-200 shadow-xl/5">
@@ -162,10 +169,15 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
             ) : (
               <img
                 src={clothing.previewImg ?? undefined}
-                className="w-auto object-contain drop-shadow-2xl/20 h-full p-5 lg:p-15"
+                className="w-auto object-contain drop-shadow-2xl/20 h-full p-5 lg:p-15 mx-auto"
               />
             )}
           </div>
+          {clothing.previewGenerationData ? (
+            <p className="text-xs text-zinc-500 w-full text-center">
+              {clothing.previewGenerationData.model}
+            </p>
+          ) : null}
           <div className="h-[100px] pb-5 flex flex-row items-center shrink-0 cursor-pointer gap-3">
             {clothing.uploadedPhotos.map((photo) => (
               <img

@@ -5,14 +5,16 @@ export function InputField({ children }: React.PropsWithChildren) {
 export type inputStyle = "default" | "outline";
 
 export function Input({
-  inputStyle = "default",
+  inputStyle = "outline",
   className,
   type,
+  label,
   error,
   ...props
 }: React.ComponentProps<"input"> & {
   error?: boolean;
   inputStyle?: inputStyle;
+  label?: string;
 }) {
   const styleClassNames =
     inputStyle === "default"
@@ -30,7 +32,9 @@ export function Input({
         ${error && "border-destructive aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"}
         ${className}`}
       {...props}
-    />
+    >
+      {label && <label className="text-sm text-zinc-500">{label}</label>}
+    </input>
   );
 }
 

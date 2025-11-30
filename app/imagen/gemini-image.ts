@@ -5,6 +5,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 export enum Model {
   Flash_2_5_Image = "gemini-2.5-flash-image",
   Flash_2_5 = "gemini-2.5-flash",
+  Gemini_3_Pro_Preview = "gemini-3-pro-image-preview",
 }
 
 export async function generateImage(prompt: string) {
@@ -44,8 +45,9 @@ export async function generateImage(prompt: string) {
 }
 
 export async function transformImage(
-  imageBuffer: Buffer,
+  imageBuffers: Buffer[],
   prompt: string,
+  model: Model = Model.Gemini_3_Pro_Preview,
   mimeType = "image/png"
 ) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -56,17 +58,17 @@ export async function transformImage(
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
-    model: Model.Flash_2_5_Image,
+    model,
     contents: [
       {
         role: "user",
         parts: [
-          {
+          ...imageBuffers.map((imageBuffer) => ({
             inlineData: {
               mimeType,
               data: imageBuffer.toString("base64"),
             },
-          },
+          })),
           {
             text: prompt,
           },
@@ -77,8 +79,7 @@ export async function transformImage(
 
   const candidate = response.candidates?.[0];
   if (!candidate?.content?.parts) {
-    console.error("No candidates returned:", response);
-    return;
+    throw new Error("No candidates returned:" + response);
   }
 
   for (const part of candidate.content.parts) {
@@ -88,9 +89,16 @@ export async function transformImage(
     }
     if (part.inlineData?.data) {
       const base64 = part.inlineData.data;
-      return Buffer.from(base64, "base64");
+      return {
+        previewImgBuffer: Buffer.from(base64, "base64"),
+        generationData: {
+          prompt,
+          model,
+        },
+      };
     }
   }
+  throw new Error("No image data returned:" + response);
 }
 
 export async function structuredResponseFromImage<T>(

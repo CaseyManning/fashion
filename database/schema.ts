@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -25,10 +26,53 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  height: text("height"),
+  weight: text("weight"),
+  waist: text("waist"),
+  bust: text("bust"),
+  hip: text("hip"),
 });
 
-export const userClosetRelations = relations(users, ({ many }) => ({
+export const inspoPhotos = pgTable("inspo_photos", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  key: varchar("key", { length: 255 }),
+  personal: boolean("personal").default(false).notNull(),
+  notes: text("notes"),
+});
+
+export const bodyPhotos = pgTable("body_photos", {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  key: varchar("key", { length: 255 }),
+});
+
+export const bodyPhotoRelations = relations(bodyPhotos, ({ one }) => ({
+  user: one(users, {
+    fields: [bodyPhotos.userId],
+    references: [users.id],
+  }),
+}));
+
+export const inspoPhotoRelations = relations(inspoPhotos, ({ one }) => ({
+  user: one(users, {
+    fields: [inspoPhotos.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userRelations = relations(users, ({ many }) => ({
   clothing: many(clothing),
+  inspoPhotos: many(inspoPhotos),
+  bodyPhotos: many(bodyPhotos),
 }));
 
 export const clothingCategories = [
@@ -66,6 +110,10 @@ export const clothing = pgTable(
     colorHex: text("color_hex"),
     favorite: boolean("favorite").default(false),
     rating: integer("rating").default(0),
+    previewGenerationData: jsonb("preview_generation_data").$type<{
+      prompt: string;
+      model: string;
+    }>(),
   },
   () => [check("rating_check", sql`rating >= 0 AND rating <= 5`)]
 );

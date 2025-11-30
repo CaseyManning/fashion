@@ -13,6 +13,8 @@ export default [
         route(":id", "routes/closet/item.tsx"),
       ]),
       route("settings", "routes/settings.tsx"),
+      route("you", "routes/you.tsx"),
+      route("outfit", "routes/outfitgen.tsx"),
     ]),
     route("generate", "routes/generate.tsx"),
   ]),

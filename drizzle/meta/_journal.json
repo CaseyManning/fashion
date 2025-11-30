@@ -36,6 +36,20 @@
       "when": 1764449774802,
       "tag": "0004_cheerful_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1764462864239,
+      "tag": "0005_groovy_pestilence",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1764465001327,
+      "tag": "0006_curious_living_tribunal",
+      "breakpoints": true
     }
   ]
 }
