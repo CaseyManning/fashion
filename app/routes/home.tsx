@@ -8,30 +8,33 @@ import { getUser } from "~/utils/global-context";
 import { SuggestionImages } from "~/components/suggestion-images";
 import { Sidebar } from "~/components/sidebar";
 import { Outlet } from "react-router";
+import { uploadClothing } from "~/clothing/clothing.server";
+import ImageDragHandler from "~/components/draghandler";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "fashion" }];
 }
-
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  let name = formData.get("name");
-  let email = formData.get("email");
-  if (typeof name !== "string" || typeof email !== "string") {
-    return { guestBookError: "Name and email are required" };
+  const image = formData.get("image") as File;
+
+  if (image.type && !image.type.startsWith("image/")) {
+    return {
+      success: false,
+      error: "Only image files can be added to your closet.",
+    };
   }
 
-  name = name.trim();
-  email = email.trim();
-  if (!name || !email) {
-    return { guestBookError: "Name and email are required" };
-  }
-
-  const db = database();
   try {
-    await db.insert(schema.guestBook).values({ name, email });
+    console.log("uploading clothing", image);
+    const clothing = await uploadClothing(image);
+    return { success: true, clothingId: clothing.id };
   } catch (error) {
-    return { guestBookError: "Error adding to guest book" };
+    console.error("Global clothing upload failed", error);
+    return {
+      success: false,
+      error: "Couldn't upload that item. Please try again.",
+    };
   }
 }
 
@@ -61,6 +64,7 @@ export default function Home({ matches }: Route.ComponentProps) {
       <div className="flex-1 relative">
         <Outlet />
       </div>
+      <ImageDragHandler />
     </div>
   );
 }

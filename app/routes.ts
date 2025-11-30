@@ -14,7 +14,7 @@ export default [
       ]),
       route("settings", "routes/settings.tsx"),
       route("you", "routes/you.tsx"),
-      route("outfit", "routes/outfitgen.tsx"),
+      route("outfitgen", "routes/outfitgen.tsx"),
       route("outfit/:id", "routes/outfit.tsx"),
     ]),
     route("generate", "routes/generate.tsx"),

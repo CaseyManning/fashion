@@ -5,8 +5,6 @@ import { getUser } from "~/utils/global-context";
 import { eq, type InferSelectModel } from "drizzle-orm";
 import * as schema from "~/database/schema";
 import { clothingCategories } from "~/database/schema";
-import { useState } from "react";
-import { Input } from "~/components/ui/input";
 import Button from "~/components/ui/button";
 import { uploadClothing } from "~/clothing/clothing.server";
 import Loading from "~/components/ui/loading";
@@ -67,57 +65,9 @@ export default function ClosetList({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
-  const [adding, setAdding] = useState(false);
-
-  const handleAdd = () => {
-    setAdding(true);
-  };
-
-  const handleCancel = () => {
-    setAdding(false);
-  };
-
   return (
     <>
-      <div className="w-full p-5 max-w-[900px] mx-auto">
-        <div className="flex flex-row items-center justify-start border-zinc-200 border bg-zinc-100 rounded-md w-fit mx-auto">
-          {adding ? (
-            <div className="p-2">
-              <Form
-                method="post"
-                className="flex flex-col gap-2"
-                encType="multipart/form-data"
-              >
-                <Input
-                  name="image"
-                  type="file"
-                  required
-                  className="p-3 border border-zinc-200 rounded-md"
-                />
-                <div className="flex flex-row gap-2">
-                  <Button type="button" onClick={handleCancel}>
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    color="black"
-                    disabled={isSubmitting}
-                    value="add"
-                  >
-                    {isSubmitting ? "Adding..." : "Add"}
-                  </Button>
-                </div>
-              </Form>
-            </div>
-          ) : (
-            <div
-              className="w-full h-full cursor-pointer flex items-center justify-center p-5 px-10"
-              onClick={handleAdd}
-            >
-              + Add item
-            </div>
-          )}
-        </div>
+      <div className="w-full p-5 lg:p-15 mx-auto">
         {filledCategories.map((category) => (
           <div key={category} className="mb-10">
             <p className="font-bold font-serif text-xl text-left mb-2 w-1/2">
@@ -147,7 +97,10 @@ export default function ClosetList({ actionData }: Route.ComponentProps) {
             </div>
           </div>
         ))}
-        <Form method="post">
+        <p className="text-sm text-zinc-500 mb-5">
+          Drag a photo to add it to your closet
+        </p>
+        {/* <Form method="post">
           <Button
             type="submit"
             color="black"
@@ -156,7 +109,7 @@ export default function ClosetList({ actionData }: Route.ComponentProps) {
           >
             Clear all
           </Button>
-        </Form>
+        </Form> */}
       </div>
       <Outlet />
     </>

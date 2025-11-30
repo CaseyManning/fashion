@@ -13,7 +13,7 @@ export function SuggestionImages({ outfits }: SuggestionImagesProps) {
           <img
             src={outfit.image ?? ""}
             alt="Outfit"
-            className="h-[50vh] w-auto object-contain"
+            className="h-[70vh] w-auto object-contain"
           />
         </Link>
       ))}

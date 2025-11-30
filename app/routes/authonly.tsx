@@ -1,4 +1,4 @@
-import { href, Outlet, redirect } from "react-router";
+import { href, redirect } from "react-router";
 import { getOptionalUser } from "~/utils/global-context";
 
 export function loader() {
@@ -6,8 +6,4 @@ export function loader() {
   if (!user) {
     throw redirect(href("/login"));
   }
-}
-
-export default function AuthOnly() {
-  return <Outlet />;
 }

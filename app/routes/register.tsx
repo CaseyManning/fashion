@@ -71,7 +71,11 @@ export default function RegisterRoute() {
           <Link to="/login" className="text-sm text-zinc-500 hover:underline">
             Log in
           </Link>
-          <Button type="submit" color="black">
+          <Button
+            type="submit"
+            color="black"
+            className="rounded-none p-3! px-5!"
+          >
             Register
           </Button>
         </div>

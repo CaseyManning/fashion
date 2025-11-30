@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { href, Link } from "react-router";
 import type { Route } from "../routes/+types/home";
 
 export function Sidebar({
@@ -11,26 +11,30 @@ export function Sidebar({
   const links = [
     {
       label: "Outfits",
-      href: "/",
+      href: href("/"),
     },
     {
       label: "Closet",
-      href: "/closet",
+      href: href("/closet"),
     },
     {
       label: "You",
-      href: "/you",
+      href: href("/you"),
     },
     {
       label: "Settings",
-      href: "/settings",
+      href: href("/settings"),
+    },
+    {
+      label: "Generate",
+      href: href("/outfitgen"),
     },
   ];
   const plainPath = currentPath?.replaceAll("/", "");
 
   return (
     <div className="flex flex-col items-center gap-3 p-5 w-54 bg-zinc-100">
-      {links.map((link, index) => (
+      {links.map((link) => (
         <Link
           key={link.href}
           to={link.href}

@@ -1,4 +1,4 @@
-import { hash } from "node:crypto";
+import { createHash } from "node:crypto";
 import type { UserLoginData } from "./login.schema";
 import type { NewUserData } from "./register.schema";
 import { database } from "~/database/context";
@@ -34,7 +34,9 @@ export async function registerUser(userData: NewUserData) {
     };
   }
 
-  const hashedPassword = hash("sha256", userData.password);
+  const hashedPassword = createHash("sha256")
+    .update(userData.password)
+    .digest("hex");
 
   const newUser = (
     await db
@@ -73,7 +75,10 @@ export async function loginUser(loginData: UserLoginData) {
   const loggedInUser = await db.query.users.findFirst({
     where: and(
       eq(schema.users.email, loginData.email),
-      eq(schema.users.passwordHash, hash("sha256", loginData.password))
+      eq(
+        schema.users.passwordHash,
+        createHash("sha256").update(loginData.password).digest("hex")
+      )
     ),
   });
 

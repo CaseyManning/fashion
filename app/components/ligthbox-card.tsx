@@ -38,10 +38,10 @@ export function LightboxCard({
 
   return (
     <div
-      className="flex flex-row absolute top-0 left-0 w-full h-full bg-zinc-100 z-10"
+      className="flex flex-row fixed top-0 left-0 w-full bg-zinc-100 z-10 h-screen"
       {...props}
     >
-      <div className="flex flex-row gap-4 bg-white m-10 rounded-md p-4 w-full border border-zinc-200 shadow-xl/5">
+      <div className="flex flex-row gap-4 bg-white m-10 rounded-md p-4 w-full border border-zinc-200 shadow-xl/5 relative">
         {children}
       </div>
     </div>

@@ -50,22 +50,26 @@ export async function addClothingPhoto(image: File, clothingId: string) {
 
 export async function extractInfoForClothing(
   image: Buffer
-): Promise<Pick<Clothing, "category">> {
+): Promise<Pick<Clothing, "category" | "description">> {
   const infoSchema = z.object({
     category: z.enum(schema.clothingCategory.enumValues),
+    description: z.string(),
   });
   const response = await structuredResponseFromImage(
     image,
-    "Determine the category of the clothing item from the image.",
+    "Determine the category of the clothing item from the image and create a detailed description of the item for the purposes of accurately recreating its visual appearance.",
     infoSchema
   );
   return {
     category: response.category,
+    description: response.description,
   };
 }
 
 async function processUploadedClothing(clothing: Clothing, img: Sharp) {
-  const { category } = await extractInfoForClothing(await img.toBuffer());
+  const { category, description } = await extractInfoForClothing(
+    await img.toBuffer()
+  );
 
   console.log("extracting info finished");
 
@@ -73,7 +77,7 @@ async function processUploadedClothing(clothing: Clothing, img: Sharp) {
 
   const { previewImgBuffer, generationData } = await transformImage(
     [await img.toBuffer()],
-    "Generate a clean preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details and colors and shape of the item as closely as possible. The item should be the only object in the image. Do not include a background, use plain white behind the item. No horizontal whitespace - edges of item should be nearly flush with the edges of the image. The proportions of the output should exactly match the input.",
+    "Generate a clean preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details and colors and shape of the item as closely as possible. The item should be the only object in the image. Do not include a background, use plain white behind the item. No horizontal whitespace - edges of item should be nearly flush with the edges of the image. The proportions of the output should exactly match the input. Remove any extra objects such as hangers.",
     Model.Flash_2_5_Image
   );
   if (!previewImgBuffer) {
@@ -100,6 +104,7 @@ async function processUploadedClothing(clothing: Clothing, img: Sharp) {
     .set({
       previewImg: previewRelativePath,
       category,
+      description,
       processing: false,
       previewGenerationData: generationData,
     })

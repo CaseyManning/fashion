@@ -30,7 +30,7 @@ export async function action({ request }: Route.ActionArgs) {
       const arrayBuffer = await image.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const mimeType = image.type || "image/png";
-      const transformed = await transformImage(buffer, promptText, mimeType);
+      const transformed = await transformImage([buffer], promptText);
 
       if (!transformed) {
         return {
@@ -39,7 +39,7 @@ export async function action({ request }: Route.ActionArgs) {
         };
       }
 
-      const base64 = transformed.toString("base64");
+      const base64 = transformed.previewImgBuffer.toString("base64");
       const dataUrl = `data:${mimeType};base64,${base64}`;
 
       return { image: dataUrl, prompt: promptText, mode: "transform" as const };

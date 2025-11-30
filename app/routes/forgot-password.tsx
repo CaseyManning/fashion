@@ -1,5 +1,5 @@
 import { href, Link } from "react-router";
-import { Button } from "~/components/ui/button";
+import Button from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 
 export default function ForgotPasswordRoute() {
@@ -8,7 +8,7 @@ export default function ForgotPasswordRoute() {
       <p className="mb-2 self-start font-bold text-black">Forgot password</p>
       <Input className="w-full" placeholder="Enter your email" name="email" />
       <Link viewTransition={false} to={href("/login")} />
-      <Button>Send password reset email</Button>
+      <Button type="submit">Send password reset email</Button>
     </div>
   );
 }

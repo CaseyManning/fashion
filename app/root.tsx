@@ -12,6 +12,7 @@ import type { Route } from "./+types/root";
 import "./app.css";
 import { authSessionMiddleware } from "./auth/auth.server";
 import { globalStorageMiddleware } from "./utils/global-context";
+import { ToastProvider } from "./components/toasts";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -40,7 +41,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <ToastProvider>{children}</ToastProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

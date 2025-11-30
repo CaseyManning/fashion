@@ -1,4 +1,3 @@
-import { SuggestionImages } from "~/components/suggestion-images";
 import type { Route } from "./+types/settings";
 
 export function meta({}: Route.MetaArgs) {

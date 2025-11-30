@@ -235,7 +235,7 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
           <Button
             className="p-2!"
             color="transparent"
-            onClick={() => navigate("/closet")}
+            onClick={() => navigate(-1)}
           >
             <X size={20} />
           </Button>

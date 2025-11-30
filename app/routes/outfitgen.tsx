@@ -322,7 +322,6 @@ export default function OutfitGen() {
           <textarea
             id="prompt"
             name="prompt"
-            defaultValue="Arrange these pieces into a cohesive look on a clean background, worn naturally by the person in the body reference photos. Keep proportions realistic and fashion-forward."
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-0 focus:border-zinc-400"
             rows={3}
             disabled={isSubmitting}

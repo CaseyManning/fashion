@@ -1,9 +1,11 @@
 import { eq } from "drizzle-orm";
-import { href, Link, useLoaderData } from "react-router";
+import { href, Link, useLoaderData, useNavigate } from "react-router";
 import { database } from "~/database/context";
 import * as schema from "~/database/schema";
 import { LightboxCard } from "~/components/ligthbox-card";
 import type { Route } from "./+types/outfit";
+import Button from "~/components/ui/button";
+import { X } from "lucide-react";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { id } = params;
@@ -53,7 +55,7 @@ const zOrder: Record<(typeof schema.clothingCategories)[number], number> = {
 
 export default function Outfit() {
   const { outfit } = useLoaderData<typeof loader>();
-  console.log(outfit);
+  const navigate = useNavigate();
   const sortedClothing = outfit.outfitsToClothing.sort((a, b) => {
     return sortOrder[a.clothing.category] - sortOrder[b.clothing.category];
   });
@@ -85,6 +87,15 @@ export default function Outfit() {
             );
           })}
         </div>
+      </div>
+      <div className="absolute top-4 right-4 flex flex-row gap-2">
+        <Button
+          className="p-2!"
+          color="transparent"
+          onClick={() => navigate(-1)}
+        >
+          <X size={20} />
+        </Button>
       </div>
     </LightboxCard>
   );
