@@ -1,5 +1,12 @@
 import { eq } from "drizzle-orm";
-import { href, Link, useLoaderData, useNavigate } from "react-router";
+import {
+  href,
+  Link,
+  redirect,
+  useLoaderData,
+  useNavigate,
+  useSubmit,
+} from "react-router";
 import { database } from "~/database/context";
 import * as schema from "~/database/schema";
 import { LightboxCard } from "~/components/ligthbox-card";
@@ -29,22 +36,25 @@ export async function loader({ params }: Route.LoaderArgs) {
   return { outfit };
 }
 
+export async function action({ request, params }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const { id } = params;
+  if (!id) {
+    throw new Error("No id provided");
+  }
+  const action = formData.get("_action");
+  if (action === "delete") {
+    const db = database();
+    await db
+      .delete(schema.outfitGenerations)
+      .where(eq(schema.outfitGenerations.id, id));
+    return true;
+  }
+}
 const sortOrder: Record<(typeof schema.clothingCategories)[number], number> = {
   outerwear: 0,
   tops: 1,
   bottoms: 2,
-  dresses: 3,
-  accessories: 4,
-  shoes: 5,
-  bags: 6,
-  hats: 7,
-  other: 8,
-} as const;
-
-const zOrder: Record<(typeof schema.clothingCategories)[number], number> = {
-  outerwear: 1,
-  tops: 2,
-  bottoms: 1,
   dresses: 3,
   accessories: 4,
   shoes: 5,
@@ -59,6 +69,12 @@ export default function Outfit() {
   const sortedClothing = outfit.outfitsToClothing.sort((a, b) => {
     return sortOrder[a.clothing.category] - sortOrder[b.clothing.category];
   });
+  const submit = useSubmit();
+  const handleDelete = () => {
+    submit({ _action: "delete" }, { method: "post" }).then(() => {
+      navigate(-1); //TODO: refactor to fetcher so nav doesnt happen automatically
+    });
+  };
   return (
     <LightboxCard closeOnEscape={true}>
       <img
@@ -95,6 +111,11 @@ export default function Outfit() {
           onClick={() => navigate(-1)}
         >
           <X size={20} />
+        </Button>
+      </div>
+      <div className="absolute bottom-4 right-4 flex flex-row gap-2">
+        <Button color="black" onClick={handleDelete}>
+          Delete
         </Button>
       </div>
     </LightboxCard>

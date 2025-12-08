@@ -1,5 +1,4 @@
-import sharp, { type Sharp } from "sharp";
-import path from "path";
+import type { Sharp } from "sharp";
 import type { Clothing } from "~/routes/closet/closet";
 import { database } from "~/database/context";
 import { getUser } from "~/utils/global-context";
@@ -10,28 +9,9 @@ import {
   transformImage,
 } from "~/imagen/gemini-image";
 import z from "zod/v3";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { cropToNonTransparent } from "./imageutils.server";
-
-export async function processAndSave(
-  buffer: Buffer,
-  folder: string = "closet"
-) {
-  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
-
-  const fileName = `${Date.now()}.png`;
-  const filePath = path.join(uploadDir, fileName);
-
-  const img = await sharp(buffer).rotate().toFormat("png");
-  await img.toFile(filePath);
-
-  const relativePath = "/" + path.relative(process.cwd() + "/public", filePath);
-
-  return {
-    relativePath,
-    img,
-  };
-}
+import { processAndSave, readImageBuffer } from "~/utils/images.server";
 
 export async function addClothingPhoto(image: File, clothingId: string) {
   const buffer = Buffer.from(await image.arrayBuffer());
@@ -48,6 +28,10 @@ export async function addClothingPhoto(image: File, clothingId: string) {
   console.log("photo added", uploadedPhoto);
 }
 
+async function bufferFromKey(key: string) {
+  return readImageBuffer(key);
+}
+
 export async function extractInfoForClothing(
   image: Buffer
 ): Promise<Pick<Clothing, "category" | "description">> {
@@ -57,13 +41,40 @@ export async function extractInfoForClothing(
   });
   const response = await structuredResponseFromImage(
     image,
-    "Determine the category of the clothing item from the image and create a detailed description of the item for the purposes of accurately recreating its visual appearance.",
+    "Determine the category of the clothing item from the image and create a detailed description of the item for the purposes of accurately recreating its visual appearance, 3 sentences max. Do not describe labels or tags.",
     infoSchema
   );
   return {
     category: response.category,
     description: response.description,
   };
+}
+
+export async function reExtractInfoForClothing(id: string) {
+  const db = database();
+  const clothing = await db.query.clothing.findFirst({
+    where: eq(schema.clothing.id, id),
+    with: {
+      uploadedPhotos: true,
+    },
+  });
+
+  if (!clothing) {
+    throw new Error("Clothing not found");
+  }
+
+  const key = clothing.uploadedPhotos[0].key!;
+  const buffer = await bufferFromKey(key);
+
+  const { category, description } = await extractInfoForClothing(buffer);
+
+  await db
+    .update(schema.clothing)
+    .set({
+      category,
+      description,
+    })
+    .where(eq(schema.clothing.id, id));
 }
 
 async function processUploadedClothing(clothing: Clothing, img: Sharp) {
@@ -77,8 +88,8 @@ async function processUploadedClothing(clothing: Clothing, img: Sharp) {
 
   const { previewImgBuffer, generationData } = await transformImage(
     [await img.toBuffer()],
-    "Generate a clean preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details and colors and shape of the item as closely as possible. The item should be the only object in the image. Do not include a background, use plain white behind the item. No horizontal whitespace - edges of item should be nearly flush with the edges of the image. The proportions of the output should exactly match the input. Remove any extra objects such as hangers.",
-    Model.Flash_2_5_Image
+    "Generate a clean preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details of the item as closely as possible. The item should be the only object in the image. Do not include a background, use plain white behind the item. Remove any extra objects such as hangers, keeping the clothing item the same but cleaned up as in a photoshoot.",
+    Model.Gemini_3_Pro_Preview
   );
   if (!previewImgBuffer) {
     throw new Error("Failed to generate preview image");
@@ -141,4 +152,39 @@ export async function uploadClothing(image: File): Promise<Clothing> {
   });
 
   return clothing;
+}
+
+export async function randomOutfitForItem(clothingId: string) {
+  const db = database();
+  const user = getUser();
+
+  const clothingItem = await db.query.clothing.findFirst({
+    where: and(
+      eq(schema.clothing.id, clothingId),
+      eq(schema.clothing.userId, user.id)
+    ),
+  });
+  if (!clothingItem) {
+    throw new Error("Clothing not found");
+  }
+
+  const allClothing = await db.query.clothing.findMany({
+    where: eq(schema.clothing.userId, user.id),
+  });
+
+  const prompt = `Consider the below clothing library: {
+  ${allClothing.map((item, idx) => `item ${idx}: ${item.description}`).join("\n")}
+  }. 
+  
+  Think about what would make a cohesive outfit together with item ${clothingItem.id}: ${clothingItem.description}. Return a list of item numbers for the outfit`;
+
+  const outiftIds = await structuredResponseFromImage(
+    await bufferFromKey(clothingItem.previewImg!),
+    prompt,
+    z.array(z.string())
+  );
+
+  console.log("outfit ids", outiftIds);
+
+  return outiftIds;
 }

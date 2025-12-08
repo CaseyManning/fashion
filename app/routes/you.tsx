@@ -8,7 +8,7 @@ import { eq } from "drizzle-orm";
 import { Plus, X } from "lucide-react";
 import AutosaveForm from "~/components/ui/AutosaveForm";
 import { useRef } from "react";
-import { processAndSave } from "~/clothing/clothing.server";
+import { processAndSave } from "~/utils/images.server";
 import Button from "~/components/ui/button";
 
 export async function loader({}: Route.LoaderArgs) {

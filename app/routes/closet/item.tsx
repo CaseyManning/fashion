@@ -9,12 +9,16 @@ import {
   redirect,
   useNavigate,
   useRouteLoaderData,
+  useSubmit,
 } from "react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "~/components/ui/input";
 import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
 import type { loader as closetLoader } from "./closet";
-import { addClothingPhoto } from "~/clothing/clothing.server";
+import {
+  addClothingPhoto,
+  reExtractInfoForClothing,
+} from "~/clothing/clothing.server";
 import { LightboxCard } from "~/components/ligthbox-card";
 
 export async function loader({ params }: Route.LoaderArgs) {
@@ -48,6 +52,8 @@ export async function action({ request, params }: Route.ActionArgs) {
     return redirect(href("/closet"));
   } else if (action === "add") {
     await addClothingPhoto(formData.get("image") as File, id);
+  } else if (action === "re-extract-info") {
+    await reExtractInfoForClothing(id);
   } else {
     await db
       .update(schema.clothing)
@@ -144,6 +150,12 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
   useEffect(() => {
     setViewingUpload(null);
   }, [clothing.id]);
+
+  const submit = useSubmit();
+
+  const handleReExtractInfo = useCallback(() => {
+    submit({ _action: "re-extract-info" }, { method: "post" });
+  }, [clothing.uploadedPhotos[0].key]);
 
   return (
     <LightboxCard key={clothing.id} closeOnEscape={true}>
@@ -308,6 +320,14 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
             Delete
           </Button>
         </Form>
+      </div>
+      <div className="absolute bottom-4 right-4 flex flex-row gap-2 max-w-[300px]">
+        {clothing.description ? (
+          <p className="text-sm">{clothing.description}</p>
+        ) : null}
+        <Button color="transparent" onClick={handleReExtractInfo}>
+          re-extract info
+        </Button>
       </div>
     </LightboxCard>
   );

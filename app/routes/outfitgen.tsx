@@ -1,7 +1,7 @@
-import fs from "fs/promises";
-import path from "path";
 import {
   Form,
+  href,
+  Link,
   useActionData,
   useLoaderData,
   useNavigation,
@@ -14,13 +14,9 @@ import { and, eq, inArray, type InferSelectModel } from "drizzle-orm";
 import Button from "~/components/ui/button";
 import { transformImage } from "~/imagen/gemini-image";
 import { useEffect, useMemo, useState } from "react";
-import { processAndSave } from "~/clothing/clothing.server";
+import { processAndSave, readImageBuffer } from "~/utils/images.server";
 
 type Clothing = InferSelectModel<typeof schema.clothing>;
-
-type OutfitWithClothing = InferSelectModel<typeof schema.outfitGenerations> & {
-  clothing: Clothing[];
-};
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Outfit generator" }];
@@ -38,23 +34,16 @@ export async function loader() {
     where: eq(schema.bodyPhotos.userId, user.id),
   });
 
-  const outfitsRaw = await db.query.outfitGenerations.findMany({
+  const outfits = await db.query.outfitGenerations.findMany({
     where: eq(schema.outfitGenerations.userId, user.id),
-  });
-
-  const outfits: OutfitWithClothing[] = [];
-  for (const outfit of outfitsRaw) {
-    const links = await db.query.outfitsToClothing.findMany({
-      where: eq(schema.outfitsToClothing.outfitId, outfit.id),
-      with: {
-        clothing: true,
+    with: {
+      outfitsToClothing: {
+        with: {
+          clothing: true,
+        },
       },
-    });
-    outfits.push({
-      ...outfit,
-      clothing: links.map((link) => link.clothing),
-    });
-  }
+    },
+  });
 
   return { clothing, outfits, bodyPhotos };
 }
@@ -105,32 +94,22 @@ export async function action({ request }: Route.ActionArgs) {
   const buffers: Buffer[] = [];
   for (const item of withPreviews) {
     if (!item.previewImg) continue;
-    const imagePath = path.join(
-      process.cwd(),
-      "public",
-      item.previewImg.replace(/^\//, "")
-    );
     try {
-      const buffer = await fs.readFile(imagePath);
+      const buffer = await readImageBuffer(item.previewImg);
       buffers.push(buffer);
     } catch (error) {
-      console.error("Unable to read preview image", imagePath, error);
+      console.error("Unable to read preview image", item.previewImg, error);
       return { error: "Could not read one of the preview images." };
     }
   }
 
   for (const photo of bodyPhotos) {
     if (!photo.key) continue;
-    const photoPath = path.join(
-      process.cwd(),
-      "public",
-      photo.key.replace(/^\//, "")
-    );
     try {
-      const buffer = await fs.readFile(photoPath);
+      const buffer = await readImageBuffer(photo.key);
       buffers.push(buffer);
     } catch (error) {
-      console.error("Unable to read body photo", photoPath, error);
+      console.error("Unable to read body photo", photo.key, error);
       return { error: "Could not read one of the body photos." };
     }
   }
@@ -346,11 +325,12 @@ export default function OutfitGen() {
           </p>
         </div>
         {outfits.length ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {outfits.map((outfit) => (
-              <div
+              <Link
                 key={outfit.id}
-                className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
+                to={href("/outfit/:id", { id: outfit.id })}
+                className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm hover:border-black"
               >
                 {outfit.image ? (
                   <div className="mb-3 overflow-hidden rounded-md bg-zinc-50">
@@ -366,17 +346,17 @@ export default function OutfitGen() {
                     {outfit.prompt || "No prompt saved"}
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {outfit.clothing.map((item) => (
+                    {outfit.outfitsToClothing.map((item) => (
                       <span
-                        key={item.id}
+                        key={item.clothing.id}
                         className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-700"
                       >
-                        {item.name || item.category}
+                        {item.clothing.name || item.clothing.category}
                       </span>
                     ))}
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
