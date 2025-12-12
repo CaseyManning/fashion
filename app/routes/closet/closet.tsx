@@ -5,7 +5,6 @@ import { getUser } from "~/utils/global-context";
 import { eq, type InferSelectModel } from "drizzle-orm";
 import * as schema from "~/database/schema";
 import { clothingCategories } from "~/database/schema";
-import Button from "~/components/ui/button";
 import { uploadClothing } from "~/clothing/clothing.server";
 import Loading from "~/components/ui/loading";
 import { presignClothingList } from "~/utils/presign";

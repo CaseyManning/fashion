@@ -49,7 +49,7 @@ export async function presignGetUrlForKey(
   key: string,
   expiresInSeconds = 60 * 15
 ) {
-  if (!isProduction) return "/" + key;
+  if (!isProduction) return key;
 
   ensureS3Config();
   const cmd = new GetObjectCommand({
@@ -105,19 +105,19 @@ async function saveToS3(key: string, pngBuffer: Uint8Array) {
 export async function readImageBuffer(pathOrUrl: string): Promise<Buffer> {
   const normalized = normalizeKey(pathOrUrl);
 
-  if (isProduction && !isHttpUrl(pathOrUrl)) {
-    const url = publicUrlForKey(normalized);
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Unable to fetch image from storage: ${url}`);
-    }
-    return Buffer.from(await response.arrayBuffer());
-  }
-
   if (isHttpUrl(pathOrUrl)) {
     const response = await fetch(pathOrUrl);
     if (!response.ok) {
       throw new Error(`Unable to fetch image from URL: ${pathOrUrl}`);
+    }
+    return Buffer.from(await response.arrayBuffer());
+  }
+
+  if (isProduction) {
+    const presigned = await presignGetUrlForKey(normalized);
+    const response = await fetch(presigned);
+    if (!response.ok) {
+      throw new Error(`Unable to fetch image from storage: ${presigned}`);
     }
     return Buffer.from(await response.arrayBuffer());
   }
