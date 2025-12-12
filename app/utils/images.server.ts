@@ -133,7 +133,11 @@ export async function processAndSave(
   const fileName = `${Date.now()}.png`;
   const objectKey = buildObjectKey(folder, fileName);
 
-  const baseImage = sharp(buffer).rotate().toFormat("png");
+  // Limit input dimensions to avoid storing very large originals.
+  const baseImage = sharp(buffer)
+    .rotate()
+    .resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true })
+    .toFormat("png");
   const pngBuffer = await baseImage.toBuffer();
   const pngArray = new Uint8Array(pngBuffer);
   const img = sharp(pngBuffer);

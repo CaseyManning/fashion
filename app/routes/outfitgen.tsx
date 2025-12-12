@@ -333,10 +333,6 @@ export default function OutfitGen() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-lg font-semibold text-black">Saved outfits</p>
-          <p className="text-xs text-zinc-500">
-            Linked clothing items are stored in <code>outfits_to_clothing</code>
-            .
-          </p>
         </div>
         {outfits.length ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
