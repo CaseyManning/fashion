@@ -10,6 +10,7 @@ import AutosaveForm from "~/components/ui/AutosaveForm";
 import { useRef } from "react";
 import { processAndSave } from "~/utils/images.server";
 import Button from "~/components/ui/button";
+import { presignPhotos } from "~/utils/presign";
 
 export async function loader({}: Route.LoaderArgs) {
   const db = database();
@@ -26,7 +27,19 @@ export async function loader({}: Route.LoaderArgs) {
     throw new Error("User not found");
   }
 
-  return { user: withPhotos };
+  const bodyPhotos =
+    (await presignPhotos(withPhotos.bodyPhotos)) ?? withPhotos.bodyPhotos;
+
+  const inspoPhotos =
+    (await presignPhotos(withPhotos.inspoPhotos)) ?? withPhotos.inspoPhotos;
+
+  return {
+    user: {
+      ...withPhotos,
+      bodyPhotos,
+      inspoPhotos,
+    },
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {

@@ -20,6 +20,7 @@ import {
   reExtractInfoForClothing,
 } from "~/clothing/clothing.server";
 import { LightboxCard } from "~/components/ligthbox-card";
+import { presignClothing } from "~/utils/presign";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { id } = params;
@@ -36,7 +37,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   if (!clothing) {
     throw new Error("item not found");
   }
-  return { clothing };
+  return { clothing: await presignClothing(clothing) };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {

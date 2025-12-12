@@ -49,7 +49,7 @@ export async function presignGetUrlForKey(
   key: string,
   expiresInSeconds = 60 * 15
 ) {
-  if (!isProduction) return "/" + key; // dev can still serve from /public
+  if (!isProduction) return "/" + key;
 
   ensureS3Config();
   const cmd = new GetObjectCommand({

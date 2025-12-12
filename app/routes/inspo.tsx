@@ -7,6 +7,7 @@ import * as schema from "~/database/schema";
 import { useLoaderData } from "react-router";
 import Button from "~/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { presignList, presignMaybeKey } from "~/utils/presign";
 
 export async function loader() {
   const db = database();
@@ -18,7 +19,15 @@ export async function loader() {
     limit: 3,
   });
 
-  return { outfits };
+  const outfitsWithSignedImages = await presignList(
+    outfits,
+    async (outfit) => ({
+      ...outfit,
+      image: (await presignMaybeKey(outfit.image)) ?? null,
+    })
+  );
+
+  return { outfits: outfitsWithSignedImages };
 }
 
 export default function Inspo() {

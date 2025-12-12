@@ -8,7 +8,7 @@ import { clothingCategories } from "~/database/schema";
 import Button from "~/components/ui/button";
 import { uploadClothing } from "~/clothing/clothing.server";
 import Loading from "~/components/ui/loading";
-import { presignGetUrlForKey } from "~/utils/images.server";
+import { presignClothingList } from "~/utils/presign";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "closet" }];
@@ -24,14 +24,7 @@ export async function loader() {
     where: eq(schema.clothing.userId, user.id),
   });
 
-  const itemsWithSignedPreview = await Promise.all(
-    items.map(async (item) => {
-      if (!item.previewImg) return item;
-      const signedUrl = await presignGetUrlForKey(item.previewImg);
-
-      return { ...item, previewImg: signedUrl };
-    })
-  );
+  const itemsWithSignedPreview = await presignClothingList(items);
 
   const inCategories: Record<ClothingCategory, Clothing[]> = Object.fromEntries(
     schema.clothingCategory.enumValues.map((key) => [key, [] as Clothing[]])

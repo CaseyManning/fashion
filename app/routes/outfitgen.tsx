@@ -15,6 +15,11 @@ import Button from "~/components/ui/button";
 import { transformImage } from "~/imagen/gemini-image";
 import { useEffect, useMemo, useState } from "react";
 import { processAndSave, readImageBuffer } from "~/utils/images.server";
+import {
+  presignClothingList,
+  presignOutfitList,
+  presignPhotos,
+} from "~/utils/presign";
 
 type Clothing = InferSelectModel<typeof schema.clothing>;
 
@@ -45,7 +50,16 @@ export async function loader() {
     },
   });
 
-  return { clothing, outfits, bodyPhotos };
+  const clothingWithSignedPreviews = await presignClothingList(clothing);
+  const bodyPhotosWithSignedUrls =
+    (await presignPhotos(bodyPhotos)) ?? bodyPhotos;
+  const outfitsWithSignedImages = await presignOutfitList(outfits);
+
+  return {
+    clothing: clothingWithSignedPreviews,
+    outfits: outfitsWithSignedImages,
+    bodyPhotos: bodyPhotosWithSignedUrls,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {

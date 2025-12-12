@@ -13,6 +13,7 @@ import { LightboxCard } from "~/components/ligthbox-card";
 import type { Route } from "./+types/outfit";
 import Button from "~/components/ui/button";
 import { X } from "lucide-react";
+import { presignOutfit } from "~/utils/presign";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { id } = params;
@@ -33,7 +34,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   if (!outfit) {
     throw new Error("Outfit not found");
   }
-  return { outfit };
+  return { outfit: await presignOutfit(outfit) };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
