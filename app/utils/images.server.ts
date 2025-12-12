@@ -1,7 +1,12 @@
 import sharp, { type Sharp } from "sharp";
 import path from "path";
 import fs from "node:fs/promises";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const isProduction = process.env.NODE_ENV === "production";
 const bucketName = process.env.AWS_S3_BUCKET_NAME;
@@ -38,6 +43,21 @@ function normalizeKey(keyOrUrl: string) {
     return url.pathname.replace(/^\/+/, "");
   }
   return keyOrUrl.replace(/^\/+/, "");
+}
+
+export async function presignGetUrlForKey(
+  key: string,
+  expiresInSeconds = 60 * 15
+) {
+  if (!isProduction) return "/" + key; // dev can still serve from /public
+
+  ensureS3Config();
+  const cmd = new GetObjectCommand({
+    Bucket: bucketName!,
+    Key: key,
+    ResponseCacheControl: "private, max-age=3600",
+  });
+  return getSignedUrl(s3Client!, cmd, { expiresIn: expiresInSeconds });
 }
 
 function publicUrlForKey(key: string) {
@@ -77,10 +97,9 @@ async function saveToS3(key: string, pngBuffer: Uint8Array) {
       Key: key,
       Body: pngBuffer,
       ContentType: "image/png",
-      ACL: "public-read",
     })
   );
-  return publicUrlForKey(key);
+  return key;
 }
 
 export async function readImageBuffer(pathOrUrl: string): Promise<Buffer> {

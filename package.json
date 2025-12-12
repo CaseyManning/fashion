@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.946.0",
+    "@aws-sdk/s3-request-presigner": "^3.948.0",
     "@google/genai": "^1.30.0",
     "@hookform/resolvers": "^5.2.2",
     "@imgly/background-removal-node": "^1.4.5",
