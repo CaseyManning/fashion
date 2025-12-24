@@ -1,4 +1,6 @@
+import type { InferSelectModel } from "drizzle-orm";
 import { presignGetUrlForKey } from "./images.server";
+import * as schema from "~/database/schema";
 
 export async function presignMaybeKey(key?: string | null) {
   return key ? presignGetUrlForKey(key) : key;
@@ -18,7 +20,10 @@ export async function presignPhotos<T extends { key?: string | null }>(
 }
 
 export async function presignClothing<
-  T extends { previewImg?: string | null; uploadedPhotos?: Array<{ key?: string | null }> }
+  T extends {
+    previewImg?: string | null;
+    uploadedPhotos?: Array<{ key?: string | null }>;
+  },
 >(item: T): Promise<T> {
   const uploadedPhotos = item.uploadedPhotos
     ? await presignPhotos(item.uploadedPhotos)
@@ -32,30 +37,31 @@ export async function presignClothing<
 }
 
 export async function presignClothingList<
-  T extends { previewImg?: string | null; uploadedPhotos?: Array<{ key?: string | null }> }
+  T extends {
+    previewImg?: string | null;
+    uploadedPhotos?: Array<{ key?: string | null }>;
+  },
 >(items: T[]): Promise<T[]> {
   return Promise.all(items.map((item) => presignClothing(item)));
 }
 
-type OutfitLike = {
-  image?: string | null;
-  outfitsToClothing: Array<{ clothing: { previewImg?: string | null } & Record<string, unknown> }>;
+type OutfitLike = InferSelectModel<typeof schema.outfitGenerations> & {
+  clothing: InferSelectModel<typeof schema.clothing>[];
 };
 
-export async function presignOutfit<T extends OutfitLike>(outfit: T): Promise<T> {
+export async function presignOutfit<T extends OutfitLike>(
+  outfit: T
+): Promise<T> {
   return {
     ...outfit,
     image: await presignMaybeKey(outfit.image),
-    outfitsToClothing: await Promise.all(
-      outfit.outfitsToClothing.map(async (outfitToClothing) => ({
-        ...outfitToClothing,
-        clothing: await presignClothing(outfitToClothing.clothing),
-      }))
-    ),
+    clothing: await presignClothingList(outfit.clothing),
   };
 }
 
-export async function presignOutfitList<T extends OutfitLike>(outfits: T[]): Promise<T[]> {
+export async function presignOutfitList<T extends OutfitLike>(
+  outfits: T[]
+): Promise<T[]> {
   return Promise.all(outfits.map((outfit) => presignOutfit(outfit)));
 }
 

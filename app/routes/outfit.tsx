@@ -22,13 +22,11 @@ export async function loader({ params }: Route.LoaderArgs) {
   }
   const db = database();
   const outfit = await db.query.outfitGenerations.findFirst({
-    where: eq(schema.outfitGenerations.id, id),
+    where: {
+      id: id,
+    },
     with: {
-      outfitsToClothing: {
-        with: {
-          clothing: true,
-        },
-      },
+      clothing: true,
     },
   });
   if (!outfit) {
@@ -52,7 +50,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return true;
   }
 }
-const sortOrder: Record<(typeof schema.clothingCategories)[number], number> = {
+const sortOrder: Record<(typeof schema.category.enumValues)[number], number> = {
   outerwear: 0,
   tops: 1,
   bottoms: 2,
@@ -67,8 +65,8 @@ const sortOrder: Record<(typeof schema.clothingCategories)[number], number> = {
 export default function Outfit() {
   const { outfit } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const sortedClothing = outfit.outfitsToClothing.sort((a, b) => {
-    return sortOrder[a.clothing.category] - sortOrder[b.clothing.category];
+  const sortedClothing = outfit.clothing.sort((a, b) => {
+    return sortOrder[a.category] - sortOrder[b.category];
   });
   const submit = useSubmit();
   const handleDelete = () => {
@@ -85,19 +83,19 @@ export default function Outfit() {
       />
       <div className="flex flex-col gap-4 flex-1 w-[150px]">
         <div className="w-[150px] h-full flex flex-col gap-2 justify-center">
-          {sortedClothing.map((outfitToClothing, idx, array) => {
+          {sortedClothing.map((clothing, idx, array) => {
             const x = 0;
             const rotation = 0;
             const y = idx / array.length;
             return (
               <Link
-                key={outfitToClothing.clothingId}
+                key={clothing.id}
                 className="w-full hover:border-black border border-transparent p-1"
-                to={href("/closet/:id", { id: outfitToClothing.clothingId })}
+                to={href("/closet/:id", { id: clothing.id })}
               >
                 <img
-                  src={outfitToClothing.clothing.previewImg ?? ""}
-                  alt={outfitToClothing.clothing.name ?? ""}
+                  src={clothing.previewImg ?? ""}
+                  alt={clothing.name ?? ""}
                   className="object-contain"
                 />
               </Link>

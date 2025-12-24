@@ -1,11 +1,11 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-
-import * as schema from "./schema";
+import type { drizzle, PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type { relations } from "./relations";
+import type * as schema from "./schema";
 
 export const DatabaseContext = new AsyncLocalStorage<
-  PostgresJsDatabase<typeof schema>
+  ReturnType<typeof drizzle<typeof schema, typeof relations>>
 >();
 
 export function database() {

@@ -32,21 +32,23 @@ export async function loader() {
   const user = getUser();
 
   const clothing = await db.query.clothing.findMany({
-    where: eq(schema.clothing.userId, user.id),
+    where: {
+      userId: user.id,
+    },
   });
 
   const bodyPhotos = await db.query.bodyPhotos.findMany({
-    where: eq(schema.bodyPhotos.userId, user.id),
+    where: {
+      userId: user.id,
+    },
   });
 
   const outfits = await db.query.outfitGenerations.findMany({
-    where: eq(schema.outfitGenerations.userId, user.id),
+    where: {
+      userId: user.id,
+    },
     with: {
-      outfitsToClothing: {
-        with: {
-          clothing: true,
-        },
-      },
+      clothing: true,
     },
   });
 
@@ -77,10 +79,12 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const clothing = await db.query.clothing.findMany({
-    where: and(
-      eq(schema.clothing.userId, user.id),
-      inArray(schema.clothing.id, selected)
-    ),
+    where: {
+      userId: user.id,
+      id: {
+        in: selected,
+      },
+    },
   });
 
   if (clothing.length !== selected.length) {
@@ -96,7 +100,9 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const bodyPhotos = await db.query.bodyPhotos.findMany({
-    where: eq(schema.bodyPhotos.userId, user.id),
+    where: {
+      userId: user.id,
+    },
   });
 
   if (bodyPhotos.length === 0) {
@@ -356,12 +362,12 @@ export default function OutfitGen() {
                     {outfit.prompt || "No prompt saved"}
                   </p>
                   <div className="flex flex-wrap gap-1">
-                    {outfit.outfitsToClothing.map((item) => (
+                    {outfit.clothing.map((item) => (
                       <span
-                        key={item.clothing.id}
+                        key={item.id}
                         className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] font-medium text-zinc-700"
                       >
-                        {item.clothing.name || item.clothing.category}
+                        {item.name || item.category}
                       </span>
                     ))}
                   </div>

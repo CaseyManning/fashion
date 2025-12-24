@@ -6,6 +6,7 @@ import "react-router";
 import { createContext, RouterContextProvider } from "react-router";
 
 import { DatabaseContext } from "~/database/context";
+import { relations } from "~/database/relations";
 import * as schema from "~/database/schema";
 
 export const VALUE_FROM_EXPRESS = createContext<string>("VALUE_FROM_EXPRESS");
@@ -16,27 +17,18 @@ if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required");
 
 declare global {
   // eslint-disable-next-line no-var
-  var __postgresClient__: ReturnType<typeof postgres> | undefined;
-
-  // eslint-disable-next-line no-var
-  var __drizzleDb__: PostgresJsDatabase<typeof schema> | undefined;
+  var __drizzleDb__:
+    | ReturnType<typeof drizzle<typeof schema, typeof relations>>
+    | undefined;
 }
 
-// Create/reuse client
-let client: ReturnType<typeof postgres>;
-let db: PostgresJsDatabase<typeof schema>;
+let db: ReturnType<typeof drizzle<typeof schema, typeof relations>>;
 
 if (process.env.NODE_ENV === "production") {
-  client = postgres(process.env.DATABASE_URL);
-  db = drizzle(client, { schema });
+  db = drizzle(process.env.DATABASE_URL, { relations });
 } else {
-  if (!global.__postgresClient__) {
-    global.__postgresClient__ = postgres(process.env.DATABASE_URL);
-  }
-  client = global.__postgresClient__;
-
   if (!global.__drizzleDb__) {
-    global.__drizzleDb__ = drizzle(client, { schema });
+    global.__drizzleDb__ = drizzle(process.env.DATABASE_URL, { relations });
   }
   db = global.__drizzleDb__;
 }

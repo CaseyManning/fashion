@@ -19,7 +19,7 @@
     "@react-router/express": "^7.7.1",
     "@react-router/node": "^7.7.1",
     "compression": "^1.8.0",
-    "drizzle-orm": "~0.36.3",
+    "drizzle-orm": "^1.0.0-beta.2-58a4521",
     "express": "^5.1.0",
     "isbot": "^5.1.27",
     "lucide-react": "^0.555.0",
@@ -46,11 +46,12 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "dotenv-cli": "^8.0.0",
-    "drizzle-kit": "~0.28.1",
+    "drizzle-kit": "^1.0.0-beta.2-58a4521",
     "tailwindcss": "^4.1.4",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3",
     "vite": "^6.3.3",
     "vite-tsconfig-paths": "^5.1.4"
-  }
+  },
+  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538"
 }

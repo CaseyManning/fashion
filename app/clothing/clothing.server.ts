@@ -9,7 +9,7 @@ import {
   transformImage,
 } from "~/imagen/gemini-image";
 import z from "zod/v3";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { cropToNonTransparent } from "./imageutils.server";
 import { processAndSave, readImageBuffer } from "~/utils/images.server";
 
@@ -36,7 +36,7 @@ export async function extractInfoForClothing(
   image: Buffer
 ): Promise<Pick<Clothing, "category" | "description">> {
   const infoSchema = z.object({
-    category: z.enum(schema.clothingCategory.enumValues),
+    category: z.enum(schema.category.enumValues),
     description: z.string(),
   });
   const response = await structuredResponseFromImage(
@@ -53,7 +53,9 @@ export async function extractInfoForClothing(
 export async function reExtractInfoForClothing(id: string) {
   const db = database();
   const clothing = await db.query.clothing.findFirst({
-    where: eq(schema.clothing.id, id),
+    where: {
+      id: id,
+    },
     with: {
       uploadedPhotos: true,
     },
@@ -154,22 +156,44 @@ export async function uploadClothing(image: File): Promise<Clothing> {
   return clothing;
 }
 
+export async function createRandomOutfits(n = 3) {
+  const db = database();
+  const user = getUser();
+
+  const items = await db.query.clothing.findMany({
+    where: {
+      userId: user.id,
+    },
+  });
+
+  const outfits = [];
+  for (let i = 0; i < n; i++) {
+    const randomItem = items[Math.floor(Math.random() * items.length)];
+    const outfit = await randomOutfitForItem(randomItem.id);
+    outfits.push(outfit);
+  }
+
+  return outfits;
+}
+
 export async function randomOutfitForItem(clothingId: string) {
   const db = database();
   const user = getUser();
 
   const clothingItem = await db.query.clothing.findFirst({
-    where: and(
-      eq(schema.clothing.id, clothingId),
-      eq(schema.clothing.userId, user.id)
-    ),
+    where: {
+      id: clothingId,
+      userId: user.id,
+    },
   });
   if (!clothingItem) {
     throw new Error("Clothing not found");
   }
 
   const allClothing = await db.query.clothing.findMany({
-    where: eq(schema.clothing.userId, user.id),
+    where: {
+      userId: user.id,
+    },
   });
 
   const prompt = `Consider the below clothing library: {

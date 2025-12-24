@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { database } from "~/database/context";
 import type { Route } from "./+types/item";
 import * as schema from "~/database/schema";
@@ -11,9 +11,9 @@ import {
   useRouteLoaderData,
   useSubmit,
 } from "react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Input } from "~/components/ui/input";
-import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ellipsis, Plus, X } from "lucide-react";
 import type { loader as closetLoader } from "./closet";
 import {
   addClothingPhoto,
@@ -29,7 +29,9 @@ export async function loader({ params }: Route.LoaderArgs) {
   }
   const db = database();
   const clothing = await db.query.clothing.findFirst({
-    where: eq(schema.clothing.id, id),
+    where: {
+      id: id,
+    },
     with: {
       uploadedPhotos: true,
     },
@@ -37,7 +39,11 @@ export async function loader({ params }: Route.LoaderArgs) {
   if (!clothing) {
     throw new Error("item not found");
   }
-  return { clothing: await presignClothing(clothing) };
+
+  return {
+    clothing: await presignClothing(clothing),
+    debug: process.env.NODE_ENV === "development",
+  };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -63,7 +69,7 @@ export async function action({ request, params }: Route.ActionArgs) {
         brand: formData.get("brand") as string,
         category: formData.get(
           "category"
-        ) as (typeof schema.clothingCategory.enumValues)[number],
+        ) as (typeof schema.category.enumValues)[number],
         notes: formData.get("notes") as string,
       })
       .where(eq(schema.clothing.id, id));
@@ -71,7 +77,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 }
 
 const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
-  const { clothing } = loaderData;
+  const { clothing, debug } = loaderData;
 
   const { clothesList } = useRouteLoaderData<typeof closetLoader>(
     "routes/closet/closet"
@@ -105,6 +111,18 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
     );
   }, [clothing.id, clothesList]);
 
+  const [pagingLeft, setPagingLeft] = useState(false);
+  const [pagingRight, setPagingRight] = useState(false);
+
+  const pagingLeftTimeout = useRef<number | null>(null);
+  const pagingRightTimeout = useRef<number | null>(null);
+
+  const [optionsOpen, setOptionsOpen] = useState(false);
+
+  const toggleOptions = useCallback(() => {
+    setOptionsOpen((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
       const active = document.activeElement;
@@ -119,9 +137,24 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
 
       if (e.key === "ArrowRight") {
         navigateRight();
+        setPagingRight(true);
+
+        if (pagingRightTimeout.current) {
+          clearTimeout(pagingRightTimeout.current);
+        }
+        pagingRightTimeout.current = window.setTimeout(() => {
+          setPagingRight(false);
+        }, 100);
       }
       if (e.key === "ArrowLeft") {
         navigateLeft();
+        setPagingLeft(true);
+        if (pagingLeftTimeout.current) {
+          clearTimeout(pagingLeftTimeout.current);
+        }
+        pagingLeftTimeout.current = window.setTimeout(() => {
+          setPagingLeft(false);
+        }, 100);
       }
     };
     window.addEventListener("keydown", listener);
@@ -182,7 +215,7 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
             />
           )}
         </div>
-        {clothing.previewGenerationData ? (
+        {clothing.previewGenerationData && debug ? (
           <p className="text-xs text-zinc-500 w-full text-center">
             {clothing.previewGenerationData.model}
           </p>
@@ -239,10 +272,42 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
       </div>
       <div className="flex-1 flex flex-col items-start justify-center relative gap-4">
         <div className="absolute top-0 right-0 flex flex-row gap-2">
-          <Button className="p-2!" color="transparent" onClick={navigateLeft}>
+          <div className="relative">
+            <Button
+              className="p-2!"
+              color="transparent"
+              onClick={toggleOptions}
+            >
+              <Ellipsis size={20} />
+            </Button>
+            {optionsOpen && (
+              <div className="absolute top-full right-0 bg-white shadow-lg rounded-md p-2">
+                <Form method="post">
+                  <Button
+                    color="transparent"
+                    type="submit"
+                    value="delete"
+                    className="flex flex-row gap-2 items-center"
+                  >
+                    <X size={15} />
+                    Delete
+                  </Button>
+                </Form>
+              </div>
+            )}
+          </div>
+          <Button
+            className={`p-2! ${pagingLeft ? "bg-zinc-200/30" : ""}`}
+            color="transparent"
+            onClick={navigateLeft}
+          >
             <ArrowLeft size={20} />
           </Button>
-          <Button className="p-2!" color="transparent" onClick={navigateRight}>
+          <Button
+            className={`p-2! ${pagingRight ? "bg-zinc-200/30" : ""}`}
+            color="transparent"
+            onClick={navigateRight}
+          >
             <ArrowRight size={20} />
           </Button>
           <Button
@@ -253,6 +318,7 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
             <X size={20} />
           </Button>
         </div>
+        <p className="font-bold font-serif">Details:</p>
         <Form
           method="post"
           className="flex flex-col gap-4"
@@ -282,7 +348,7 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
               defaultValue={clothing.category ?? ""}
               className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none w-full"
             >
-              {schema.clothingCategories.map((category) => (
+              {schema.category.enumValues.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>
@@ -298,38 +364,24 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
           </div>
           <textarea
             className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
-            rows={2}
-            placeholder="dimensions / sizing?"
-            name="dimensions"
-            defaultValue={clothing.dimensions ?? ""}
-          />
-          <textarea
-            className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
             rows={3}
             placeholder="notes?"
             name="notes"
             defaultValue={clothing.notes ?? ""}
           />
         </Form>
-        <Form method="post" className="flex flex-col gap-4">
-          <Button
-            type="submit"
-            color="black"
-            className="rounded-none"
-            value="delete"
-          >
-            Delete
+        <p className="font-bold font-serif">Wear it with:</p>
+      </div>
+      {debug ? (
+        <div className="absolute bottom-4 right-4 flex flex-row gap-2 max-w-[300px]">
+          {clothing.description ? (
+            <p className="text-sm">{clothing.description}</p>
+          ) : null}
+          <Button color="transparent" onClick={handleReExtractInfo}>
+            re-extract info
           </Button>
-        </Form>
-      </div>
-      <div className="absolute bottom-4 right-4 flex flex-row gap-2 max-w-[300px]">
-        {clothing.description ? (
-          <p className="text-sm">{clothing.description}</p>
-        ) : null}
-        <Button color="transparent" onClick={handleReExtractInfo}>
-          re-extract info
-        </Button>
-      </div>
+        </div>
+      ) : null}
     </LightboxCard>
   );
 };

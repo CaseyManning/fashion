@@ -7,7 +7,7 @@ export type SuggestionImagesProps = {
 };
 export function SuggestionImages({ outfits }: SuggestionImagesProps) {
   return (
-    <div className="flex flex-col md:flex-row items-center justify-center gap-5 p-5">
+    <div className="flex flex-col md:flex-row items-center justify-center gap-5">
       {outfits.map((outfit) => (
         <Link key={outfit.id} to={href("/outfit/:id", { id: outfit.id })}>
           <img

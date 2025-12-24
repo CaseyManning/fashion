@@ -17,7 +17,9 @@ export async function loader({}: Route.LoaderArgs) {
   const user = getUser();
 
   const withPhotos = await db.query.users.findFirst({
-    where: eq(schema.users.id, user.id),
+    where: {
+      id: user.id,
+    },
     with: {
       bodyPhotos: true,
       inspoPhotos: true,

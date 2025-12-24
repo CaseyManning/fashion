@@ -1,1 +1,0 @@
-ALTER TABLE "clothing" ADD COLUMN "dimensions" text;
