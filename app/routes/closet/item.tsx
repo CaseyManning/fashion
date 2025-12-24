@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { database } from "~/database/context";
 import type { Route } from "./+types/item";
 import * as schema from "~/database/schema";
@@ -13,7 +13,7 @@ import {
 } from "react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "~/components/ui/input";
-import { ArrowLeft, ArrowRight, Plus, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Ellipsis, Plus, Trash, X } from "lucide-react";
 import type { loader as closetLoader } from "./closet";
 import {
   addClothingPhoto,
@@ -21,6 +21,7 @@ import {
 } from "~/clothing/clothing.server";
 import { LightboxCard } from "~/components/ligthbox-card";
 import { presignClothing } from "~/utils/presign";
+import ExpandableTextarea from "~/components/ui/ExpandableTextarea";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const { id } = params;
@@ -28,16 +29,30 @@ export async function loader({ params }: Route.LoaderArgs) {
     throw new Error("No id provided");
   }
   const db = database();
-  const clothing = await db.query.clothing.findFirst({
+  const p_clothing = db.query.clothing.findFirst({
     where: eq(schema.clothing.id, id),
     with: {
       uploadedPhotos: true,
     },
   });
+  const outfitLinks = await db.query.outfitsToClothing.findMany({
+    where: eq(schema.outfitsToClothing.clothingId, id),
+    with: {
+      outfit: true,
+    },
+  });
+
+  const outfits = outfitLinks.map((x) => x.outfit);
+
+  const [clothing] = await Promise.all([p_clothing]);
   if (!clothing) {
     throw new Error("item not found");
   }
-  return { clothing: await presignClothing(clothing) };
+
+  return {
+    clothing: await presignClothing(clothing),
+    outfits: outfits,
+  };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -154,9 +169,19 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
 
   const submit = useSubmit();
 
+  const handleDelete = useCallback(() => {
+    submit({ _action: "delete" }, { method: "post" });
+  }, [clothing.id]);
+
   const handleReExtractInfo = useCallback(() => {
     submit({ _action: "re-extract-info" }, { method: "post" });
   }, [clothing.uploadedPhotos[0].key]);
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const toggleDropdown = useCallback(() => {
+    setIsDropdownOpen((prev) => !prev);
+  }, []);
 
   return (
     <LightboxCard key={clothing.id} closeOnEscape={true}>
@@ -239,20 +264,34 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
       </div>
       <div className="flex-1 flex flex-col items-start justify-center relative gap-4">
         <div className="absolute top-0 right-0 flex flex-row gap-2">
-          <Button className="p-2!" color="transparent" onClick={navigateLeft}>
+          <div className="relative">
+            <Button color="transparent" onClick={toggleDropdown}>
+              <Ellipsis size={20} />
+            </Button>
+            {isDropdownOpen && (
+              <div className="absolute top-full right-0 bg-white shadow-lg/5 rounded-md p-1 border border-zinc-200">
+                <Button
+                  color="transparent"
+                  onClick={handleDelete}
+                  className="text-nowrap flex flex-row gap-2 items-center px-3!"
+                >
+                  <Trash size={20} />
+                  Delete item
+                </Button>
+              </div>
+            )}
+          </div>
+          <Button color="transparent" onClick={navigateLeft}>
             <ArrowLeft size={20} />
           </Button>
-          <Button className="p-2!" color="transparent" onClick={navigateRight}>
+          <Button color="transparent" onClick={navigateRight}>
             <ArrowRight size={20} />
           </Button>
-          <Button
-            className="p-2!"
-            color="transparent"
-            onClick={() => navigate(-1)}
-          >
+          <Button color="transparent" onClick={() => navigate(-1)}>
             <X size={20} />
           </Button>
         </div>
+        <p className="font-semibold">Details</p>
         <Form
           method="post"
           className="flex flex-col gap-4"
@@ -260,27 +299,21 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
           onChange={onChange}
           key={clothing.id}
         >
-          <div className="flex flex-row gap-4">
+          <div className="flex flex-row gap-4 w-full">
             <Input
               inputStyle="outline"
               type="text"
               placeholder="give it a name"
               name="name"
               defaultValue={clothing.name ?? ""}
-            />
-            <Input
-              inputStyle="outline"
-              type="text"
-              placeholder="brand?"
-              name="brand"
-              defaultValue={clothing.brand ?? ""}
+              className="w-full"
             />
           </div>
           <div className="flex flex-row gap-4">
             <select
               name="category"
               defaultValue={clothing.category ?? ""}
-              className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none w-full"
+              className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none w-1/2"
             >
               {schema.clothingCategories.map((category) => (
                 <option key={category} value={category}>
@@ -291,38 +324,22 @@ const ClosetItem = ({ loaderData }: Route.ComponentProps) => {
             <Input
               inputStyle="outline"
               type="text"
-              placeholder="favorability"
-              name="favorability"
-              defaultValue={clothing.rating ?? ""}
+              placeholder="brand?"
+              name="brand"
+              defaultValue={clothing.brand ?? ""}
+              className="w-1/2"
             />
           </div>
-          <textarea
-            className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
-            rows={2}
-            placeholder="dimensions / sizing?"
-            name="dimensions"
-            defaultValue={clothing.dimensions ?? ""}
-          />
-          <textarea
-            className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none"
-            rows={3}
+          <ExpandableTextarea
+            className="border border-zinc-500 p-3 focus:ring-0 focus:outline-none resize-none"
             placeholder="notes?"
             name="notes"
             defaultValue={clothing.notes ?? ""}
           />
         </Form>
-        <Form method="post" className="flex flex-col gap-4">
-          <Button
-            type="submit"
-            color="black"
-            className="rounded-none"
-            value="delete"
-          >
-            Delete
-          </Button>
-        </Form>
+        <p className="font-semibold">Wear it with</p>
       </div>
-      <div className="absolute bottom-4 right-4 flex flex-row gap-2 max-w-[300px]">
+      <div className="absolute bottom-4 right-4 flex flex-row gap-2 max-w-[300px] hidden">
         {clothing.description ? (
           <p className="text-sm">{clothing.description}</p>
         ) : null}

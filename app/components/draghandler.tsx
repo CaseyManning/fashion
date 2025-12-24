@@ -110,10 +110,10 @@ const ImageDragHandler = () => {
   }, [error, fetcher, info]);
 
   return isDragging ? (
-    <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-white/70 backdrop-blur">
-      <div className="flex flex-row gap-2 rounded-xl border bg-white px-6 py-4 text-center shadow-lg">
-        <Upload size={24} />
-        <p className="text-lg font-semibold text-zinc-900">
+    <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center backdrop-blur bg-black/5">
+      <div className="flex flex-row gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-4 text-center shadow-lg/5 items-center">
+        <Upload size={20} />
+        <p className="font-bold text-black">
           Drop to add this item to your closet
         </p>
       </div>

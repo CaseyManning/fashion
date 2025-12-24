@@ -88,7 +88,7 @@ async function processUploadedClothing(clothing: Clothing, img: Sharp) {
 
   const { previewImgBuffer, generationData } = await transformImage(
     [await img.toBuffer()],
-    "Generate a clean preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details of the item as closely as possible. The item should be the only object in the image. Do not include a background, use plain white behind the item. Remove any extra objects such as hangers, keeping the clothing item the same but cleaned up as in a photoshoot.",
+    "Generate a clean preview in the style of a brand / fashion photoshoot of the following clothing item, matching the details of the item as closely as possible. The item should be the only object in the image. Do not include a background, use plain white behind the item. Remove any extra objects such as hangers, keeping the clothing item the same but cleaned up and laying flat as in a photoshoot.",
     Model.Gemini_3_Pro_Preview
   );
   if (!previewImgBuffer) {

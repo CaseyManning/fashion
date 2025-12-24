@@ -60,28 +60,6 @@ export async function presignGetUrlForKey(
   return getSignedUrl(s3Client!, cmd, { expiresIn: expiresInSeconds });
 }
 
-function publicUrlForKey(key: string) {
-  if (!isProduction) {
-    return "/" + key;
-  }
-  ensureS3Config();
-  const targetBucket = bucketName!;
-  const endpoint = process.env.AWS_ENDPOINT_URL;
-  if (!endpoint) {
-    throw new Error("Missing AWS_ENDPOINT_URL for production uploads.");
-  }
-  const endpointUrl = new URL(endpoint);
-  const base = endpointUrl.toString().replace(/\/$/, "");
-  const hasBucketInHost = endpointUrl.hostname.startsWith(`${targetBucket}.`);
-  const hasBucketInPath = endpointUrl.pathname
-    .replace(/^\/+/, "")
-    .startsWith(targetBucket);
-
-  const prefix =
-    hasBucketInHost || hasBucketInPath ? base : `${base}/${targetBucket}`;
-  return `${prefix}/${key}`;
-}
-
 async function saveToLocalFilesystem(key: string, pngBuffer: Uint8Array) {
   const filePath = path.join(process.cwd(), "public", key);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -133,10 +111,14 @@ export async function processAndSave(
   const fileName = `${Date.now()}.png`;
   const objectKey = buildObjectKey(folder, fileName);
 
-  // Limit input dimensions to avoid storing very large originals.
   const baseImage = sharp(buffer)
     .rotate()
-    .resize({ width: 2000, height: 2000, fit: "inside", withoutEnlargement: true })
+    .resize({
+      width: 2000,
+      height: 2000,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
     .toFormat("png");
   const pngBuffer = await baseImage.toBuffer();
   const pngArray = new Uint8Array(pngBuffer);

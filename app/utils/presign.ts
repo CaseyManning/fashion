@@ -18,7 +18,10 @@ export async function presignPhotos<T extends { key?: string | null }>(
 }
 
 export async function presignClothing<
-  T extends { previewImg?: string | null; uploadedPhotos?: Array<{ key?: string | null }> }
+  T extends {
+    previewImg?: string | null;
+    uploadedPhotos?: Array<{ key?: string | null }>;
+  },
 >(item: T): Promise<T> {
   const uploadedPhotos = item.uploadedPhotos
     ? await presignPhotos(item.uploadedPhotos)
@@ -32,30 +35,41 @@ export async function presignClothing<
 }
 
 export async function presignClothingList<
-  T extends { previewImg?: string | null; uploadedPhotos?: Array<{ key?: string | null }> }
+  T extends {
+    previewImg?: string | null;
+    uploadedPhotos?: Array<{ key?: string | null }>;
+  },
 >(items: T[]): Promise<T[]> {
   return Promise.all(items.map((item) => presignClothing(item)));
 }
 
 type OutfitLike = {
   image?: string | null;
-  outfitsToClothing: Array<{ clothing: { previewImg?: string | null } & Record<string, unknown> }>;
+  outfitsToClothing?: Array<{
+    clothing: { previewImg?: string | null } & Record<string, unknown>;
+  }>;
 };
 
-export async function presignOutfit<T extends OutfitLike>(outfit: T): Promise<T> {
+export async function presignOutfit<T extends OutfitLike>(
+  outfit: T
+): Promise<T> {
   return {
     ...outfit,
     image: await presignMaybeKey(outfit.image),
-    outfitsToClothing: await Promise.all(
-      outfit.outfitsToClothing.map(async (outfitToClothing) => ({
-        ...outfitToClothing,
-        clothing: await presignClothing(outfitToClothing.clothing),
-      }))
-    ),
+    outfitsToClothing: outfit.outfitsToClothing
+      ? await Promise.all(
+          outfit.outfitsToClothing.map(async (outfitToClothing) => ({
+            ...outfitToClothing,
+            clothing: await presignClothing(outfitToClothing.clothing),
+          }))
+        )
+      : undefined,
   };
 }
 
-export async function presignOutfitList<T extends OutfitLike>(outfits: T[]): Promise<T[]> {
+export async function presignOutfitList<T extends OutfitLike>(
+  outfits: T[]
+): Promise<T[]> {
   return Promise.all(outfits.map((outfit) => presignOutfit(outfit)));
 }
 
